@@ -30,6 +30,10 @@ El código fue migrado desde un servidor de producción openSUSE Tumbleweed (Lin
 
 Se usa [versionado semántico](https://semver.org/lang/es/) estándar (`MAJOR.MINOR.PATCH`), con tags de git `vX.Y.Z`. La primera versión publicada es `v1.0.0`, sincronizada con `"version"` en `package.json`. Actualizar ambos en conjunto al liberar una nueva versión, y documentar los cambios en [CHANGELOG.md](CHANGELOG.md).
 
+## Rama `main` protegida
+
+`main` requiere pull request (no acepta push directo salvo administradores, ver abajo) y que pase el check de CI `build` (`.github/workflows/ci.yml`: `npm ci && npm run lint && npm run build`) antes de mergear. No permite force-push ni borrado de la rama. No exige aprobaciones de revisión (`required_approving_review_count: 0`) y `enforce_admins` está en `false`, para no bloquear al mantenedor solo. Si el equipo crece, subir `required_approving_review_count` a 1+ y evaluar `enforce_admins: true`.
+
 ## Licencia
 
 GPL-2.0 (ver [LICENSE](LICENSE)). Cualquier código nuevo agregado a este repositorio se distribuye bajo los mismos términos.
