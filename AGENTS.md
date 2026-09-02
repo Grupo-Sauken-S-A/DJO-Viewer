@@ -24,7 +24,7 @@ El código fue migrado desde un servidor de producción openSUSE Tumbleweed (Lin
 - Componentes en `src/components/` usan JSX con `.jsx` cuando son componentes React con hooks visibles ("use client"), y `.js` para utilidades.
 - Estilos con Tailwind CSS; ver `tailwind.config.js`.
 - Sin TypeScript: el proyecto es JavaScript puro (ver `jsconfig.json` para paths, no `tsconfig.json`).
-- El script `npm run lint` (`next lint`) requiere `eslint` como devDependency, que actualmente no está declarado en `package.json`; fallará si se ejecuta tal cual.
+- `npm run lint` ejecuta `eslint .` directamente con config plana (`eslint.config.mjs`, basada en `eslint-config-next/core-web-vitals`). `next lint` fue removido del CLI de Next.js a partir de la v16 — no reintroducir ese script.
 
 ## Versionado
 

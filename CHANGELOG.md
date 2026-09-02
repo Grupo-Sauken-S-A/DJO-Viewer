@@ -5,6 +5,12 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [Unreleased]
+
+### Corregido
+
+- `npm run lint` fallaba porque usaba `next lint`, comando removido del CLI de Next.js en la v16. Ahora corre `eslint .` con config plana propia (`eslint.config.mjs`) basada en `eslint-config-next/core-web-vitals`.
+
 ## [1.0.0] - 2026-09-02
 
 ### Agregado
