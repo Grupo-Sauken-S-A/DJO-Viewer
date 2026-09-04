@@ -10,6 +10,11 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # lucide-react es 0.x: bajo semver, el "major" siempre es 0, así que
+      # una versión "minor" (0.263 -> 0.577, por ejemplo) es en la práctica
+      # un salto grande, no un ajuste chico. Se ignora también.
+      - dependency-name: "lucide-react"
+        update-types: ["version-update:semver-minor"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
