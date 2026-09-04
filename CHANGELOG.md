@@ -5,6 +5,12 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.4.1] - 2026-09-04
+
+### Agregado
+
+- Las 5 secciones repetibles que ya existían desde v1.0.0 (Presentaciones del producto, Materiales locales/intrazona/extrazona/de terceros países PAC) ahora muestran también la **cantidad declarada** en su propio `*Qty` (`GoodVariantQty`, `LocalSuppliesQty`, `IntrazoneSuppliesQty`, `ExtrazoneSuppliesQty`, `PACThirdCountrySuppliesQty`) como campo explícito, no solo como badge de conteo en el título de la sección — mismo tratamiento que ya tenía `AgreementQty` desde v1.4.0. Antes, un desfasaje entre la cantidad declarada y la cantidad real de ítems presentes en el XML quedaba invisible; ahora se puede detectar a simple vista comparando el campo contra el badge. En HTML y PDF.
+
 ## [1.4.0] - 2026-09-04
 
 Soporte para la nueva versión de formato **DJOVer 2.0.0**, confirmada con un ejemplo real del dueño del proyecto. **v1.0.0 y v2.0.0 quedan ambas vigentes indefinidamente** — no es una migración.

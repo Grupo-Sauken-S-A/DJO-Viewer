@@ -481,6 +481,11 @@ const DJOViewer = () => {
                   className="col-span-full"
                   count={parseInt(formDJO?.querySelector('GoodVariantQty')?.textContent || '0')}
                 >
+                  <Field
+                    label="Cantidad de presentaciones"
+                    value={formDJO?.querySelector('GoodVariantQty')?.textContent}
+                    required={true}
+                  />
                   {/* Vamos a buscar todas las variantes de producto */}
                   {(() => {
                     if (!formDJO) return null;
@@ -561,6 +566,11 @@ const DJOViewer = () => {
                   className="col-span-full"
                   count={parseInt(formDJO?.querySelector('Components > LocalSupplies > LocalSuppliesQty')?.textContent || '0')}
                 >
+                  <Field
+                    label="Cantidad de materiales locales"
+                    value={formDJO?.querySelector('Components > LocalSupplies > LocalSuppliesQty')?.textContent}
+                    required={true}
+                  />
                   {Array.from(formDJO?.querySelectorAll('Components > LocalSupplies > LocalSuppliesItem') || []).map((item, index) => (
                     <div key={index} className="item-card goods">
                       <div className="flex-row-container">
@@ -600,6 +610,11 @@ const DJOViewer = () => {
                   className="col-span-full"
                   count={parseInt(formDJO?.querySelector('Components > IntrazoneSupplies > IntrazoneSuppliesQty')?.textContent || '0')}
                 >
+                  <Field
+                    label="Cantidad de materiales intrazona"
+                    value={formDJO?.querySelector('Components > IntrazoneSupplies > IntrazoneSuppliesQty')?.textContent}
+                    required={true}
+                  />
                   {Array.from(formDJO?.querySelectorAll('Components > IntrazoneSupplies > IntrazoneSuppliesItem') || []).map((item, index) => (
                     <div key={index} className="item-card goods">
                       <div className="flex-row-container">
@@ -669,6 +684,11 @@ const DJOViewer = () => {
                   className="col-span-full"
                   count={parseInt(formDJO?.querySelector('Components > ExtrazoneSupplies > ExtrazoneSuppliesQty')?.textContent || '0')}
                 >
+                  <Field
+                    label="Cantidad de materiales extrazona"
+                    value={formDJO?.querySelector('Components > ExtrazoneSupplies > ExtrazoneSuppliesQty')?.textContent}
+                    required={true}
+                  />
                   {Array.from(formDJO?.querySelectorAll('Components > ExtrazoneSupplies > ExtrazoneSuppliesItem') || []).map((item, index) => (
                     <div key={index} className="item-card goods">
                       <div className="flex-row-container">
@@ -723,7 +743,12 @@ const DJOViewer = () => {
                   className="col-span-full"
                   count={parseInt(formDJO?.querySelector('Components > PACThirdCountrySupplies > PACThirdCountrySuppliesQty')?.textContent || '0')}
                 >
-                  {parseInt(formDJO?.querySelector('Components > PACThirdCountrySupplies > PACThirdCountrySuppliesQty')?.textContent || '0') > 0 && 
+                  <Field
+                    label="Cantidad de materiales de terceros países PAC"
+                    value={formDJO?.querySelector('Components > PACThirdCountrySupplies > PACThirdCountrySuppliesQty')?.textContent}
+                    required={true}
+                  />
+                  {parseInt(formDJO?.querySelector('Components > PACThirdCountrySupplies > PACThirdCountrySuppliesQty')?.textContent || '0') > 0 &&
                     Array.from(formDJO?.querySelectorAll('Components > PACThirdCountrySupplies > PACThirdCountrySuppliesItem') || []).map((item, index) => (
                       <div key={index} className="item-card goods">
                         <div className="flex-row-container">
