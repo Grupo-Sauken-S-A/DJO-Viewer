@@ -197,6 +197,37 @@ export const InputValidationAlert = ({ warnings }) => {
   );
 };
 
+export const EmissionStageAlert = ({ emissionStage }) => {
+  if (!emissionStage || emissionStage.stage === 4) {
+    return null;
+  }
+
+  const isAnomaly = emissionStage.stage === 'anomalo';
+
+  return (
+    <Alert className="bg-red-50 border-red-200">
+      <div className="flex items-start gap-2">
+        <XCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+        <AlertDescription className="flex-1 min-w-0">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-red-800">
+              {isAnomaly ? 'Orden de firmas inconsistente' : 'Esta DJO está en proceso — no está completa'}
+            </p>
+            <p className="text-sm text-red-700">
+              {isAnomaly ? emissionStage.label : `Etapa detectada: ${emissionStage.label}.`}
+            </p>
+            {!isAnomaly && (
+              <p className="text-sm text-red-700">
+                Este documento no constituye una Declaración Jurada de Origen válida hasta que complete todas las etapas de su emisión.
+              </p>
+            )}
+          </div>
+        </AlertDescription>
+      </div>
+    </Alert>
+  );
+};
+
 export const DocumentSignatures = ({ xmlDoc, integrityResults = {} }) => {
   return (
     <div className="space-y-4">

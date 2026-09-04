@@ -24,3 +24,7 @@ Thumbs.db
 
 # Claude Code local config (machine-specific tool paths)
 .claude/launch.json
+
+# DJO reales usados como fixtures de test: contienen datos de negocio reales
+# (exportador, productor, firmantes), no se versionan.
+test/fixtures/real/

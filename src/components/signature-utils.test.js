@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { verifySignatureForElement, getSignatureStatusDisplay } from './signature-utils';
+import { verifySignatureForElement, getSignatureStatusDisplay, getEmissionStage, EMISSION_STAGE_LABELS } from './signature-utils';
+import { hasRealFixtures, availableRealFixtures, loadRealFixture } from '../../test/helpers/fixtures';
 
 const parse = (xml) => new DOMParser().parseFromString(xml, 'text/xml');
 
@@ -164,4 +165,57 @@ describe('getSignatureStatusDisplay', () => {
     });
     expect(display.text).toContain('S-FiDE');
   });
+});
+
+describe('getEmissionStage', () => {
+  const sig = (uri) => `<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:Reference URI="${uri}"/></ds:SignedInfo></ds:Signature>`;
+
+  it('etapa 1: borrador sin firmar', () => {
+    const doc = parse('<DJOEH id="DJOEH"><DJOExporter><DJO id="DJO"></DJO></DJOExporter></DJOEH>');
+    expect(getEmissionStage(doc)).toEqual({ stage: 1, label: EMISSION_STAGE_LABELS[1] });
+  });
+
+  it('etapa 2: firmado por el Exportador, sin datos de la EH', () => {
+    const doc = parse(`<DJOEH id="DJOEH"><DJOExporter><DJO id="DJO"></DJO>${sig('#DJO')}</DJOExporter></DJOEH>`);
+    expect(getEmissionStage(doc)).toEqual({ stage: 2, label: EMISSION_STAGE_LABELS[2] });
+  });
+
+  it('etapa 3: con datos de la EH (EH/ApprovalEH), sin firma del FH', () => {
+    const doc = parse(`<DJOEH id="DJOEH"><DJOExporter><DJO id="DJO"></DJO>${sig('#DJO')}</DJOExporter><EH>e</EH><ApprovalEH>a</ApprovalEH></DJOEH>`);
+    expect(getEmissionStage(doc)).toEqual({ stage: 3, label: EMISSION_STAGE_LABELS[3] });
+  });
+
+  it('etapa 4: completa, ambas firmas presentes', () => {
+    const doc = parse(`<DJOEH id="DJOEH"><DJOExporter><DJO id="DJO"></DJO>${sig('#DJO')}</DJOExporter><EH>e</EH><ApprovalEH>a</ApprovalEH>${sig('#DJOEH')}</DJOEH>`);
+    expect(getEmissionStage(doc)).toEqual({ stage: 4, label: EMISSION_STAGE_LABELS[4] });
+  });
+
+  it('anómalo: la EH firmó #DJOEH sin que el Exportador haya firmado #DJO', () => {
+    const doc = parse(`<DJOEH id="DJOEH"><DJOExporter><DJO id="DJO"></DJO></DJOExporter>${sig('#DJOEH')}</DJOEH>`);
+    expect(getEmissionStage(doc).stage).toBe('anomalo');
+  });
+
+  it('anómalo: hay datos de la EH sin que el Exportador haya firmado', () => {
+    const doc = parse('<DJOEH id="DJOEH"><DJOExporter><DJO id="DJO"></DJO></DJOExporter><EH>e</EH><ApprovalEH>a</ApprovalEH></DJOEH>');
+    expect(getEmissionStage(doc).stage).toBe('anomalo');
+  });
+});
+
+describe.runIf(hasRealFixtures())('getEmissionStage contra DJO reales', () => {
+  const expectedStageByFixture = {
+    'djo-exportador.xml': 1,
+    'djo-exportador-signed.xml': 2,
+    'djo-exportador-signed-eh.xml': 3,
+    'djo-exportador-signed-eh-signed.xml': 4,
+    'djo-ejemplo-1-sin-firmas.xml': 'anomalo',
+    'djo-ejemplo-2-sin-firmas.xml': 'anomalo',
+  };
+
+  for (const name of availableRealFixtures()) {
+    const expectedStage = expectedStageByFixture[name];
+    it(`${name}: etapa ${expectedStage}`, () => {
+      const doc = parse(loadRealFixture(name));
+      expect(getEmissionStage(doc).stage).toBe(expectedStage);
+    });
+  }
 });

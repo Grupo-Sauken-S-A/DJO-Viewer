@@ -352,3 +352,58 @@ export const getSignatureStatusDisplay = (signatureStatus) => {
         severity
     };
 };
+
+// --- Etapa de emisión de la DJO (mecanismo de 4 etapas: EXP firma #DJO, la EH agrega
+// EH/ApprovalEH sin romper esa firma, y por último el FH firma #DJOEH) ---
+
+const hasSignatureReferencing = (xmlDoc, elementId) => {
+    const signatures = xmlDoc.getElementsByTagNameNS(XMLDSIG_NS, "Signature");
+    return Array.from(signatures).some(sig => {
+        const reference = sig.getElementsByTagNameNS(XMLDSIG_NS, "Reference")[0];
+        return reference?.getAttribute("URI") === `#${elementId}`;
+    });
+};
+
+export const EMISSION_STAGE_LABELS = {
+    1: 'Borrador — sin firmar',
+    2: 'Firmado por el Exportador (EXP) — pendiente de verificación por la Entidad Habilitada',
+    3: 'Verificado por la Entidad Habilitada — pendiente de la firma del Funcionario Habilitado (FH)',
+    4: 'DJO completa'
+};
+
+/**
+ * Determina en qué etapa del proceso de emisión está el XML, según el mecanismo:
+ * 1) sin firmas, 2) firmado por el Exportador, 3) con datos de aprobación de la EH
+ * pero sin firmar por el FH, 4) completo (ambas firmas presentes).
+ */
+export const getEmissionStage = (xmlDoc) => {
+    const hasDjoElement = xmlDoc.getElementById('DJO') !== null;
+    const hasDjoehElement = xmlDoc.getElementById('DJOEH') !== null;
+    const hasDjoSignature = hasDjoElement && hasSignatureReferencing(xmlDoc, 'DJO');
+    const hasEhData = xmlDoc.querySelector('EH') !== null && xmlDoc.querySelector('ApprovalEH') !== null;
+    const hasDjoehSignature = hasDjoehElement && hasSignatureReferencing(xmlDoc, 'DJOEH');
+
+    if (hasDjoehSignature && !hasDjoSignature) {
+        return {
+            stage: 'anomalo',
+            label: 'Orden de firmas inconsistente: la Entidad Habilitada firmó (#DJOEH) sin que el Exportador haya firmado primero (#DJO).'
+        };
+    }
+    if (hasEhData && !hasDjoSignature) {
+        return {
+            stage: 'anomalo',
+            label: 'Se agregaron datos de la Entidad Habilitada (EH/ApprovalEH) sin que el Exportador haya firmado la DJO.'
+        };
+    }
+
+    if (!hasDjoSignature && !hasEhData) {
+        return { stage: 1, label: EMISSION_STAGE_LABELS[1] };
+    }
+    if (hasDjoSignature && !hasEhData) {
+        return { stage: 2, label: EMISSION_STAGE_LABELS[2] };
+    }
+    if (hasDjoSignature && hasEhData && !hasDjoehSignature) {
+        return { stage: 3, label: EMISSION_STAGE_LABELS[3] };
+    }
+    return { stage: 4, label: EMISSION_STAGE_LABELS[4] };
+};

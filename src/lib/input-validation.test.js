@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validateEncoding, validateStructure, validateSize, validateBOM, decodeXmlBytes, MAX_XML_SIZE_BYTES } from './input-validation';
+import { hasRealFixtures, availableRealFixtures, loadRealFixture } from '../../test/helpers/fixtures';
 
 const parse = (xml) => new DOMParser().parseFromString(xml, 'text/xml');
 
@@ -32,9 +33,9 @@ describe('validateEncoding', () => {
 });
 
 describe('validateStructure', () => {
-  const minimalDjo = '<DJOEH id="DJOEH"><DJO id="DJO"><DJOVer>1.0</DJOVer><Agreement><AgreementAcronym>A18</AgreementAcronym></Agreement></DJO></DJOEH>';
+  const minimalDjo = '<DJOEH id="DJOEH"><DJO id="DJO"><DJOVer>1.0.0</DJOVer><Agreement><AgreementAcronym>A18</AgreementAcronym></Agreement></DJO></DJOEH>';
 
-  it('no advierte nada para una estructura mínima con DJOVer/AgreementAcronym/ids presentes', () => {
+  it('no advierte nada para una estructura mínima con DJOVer/AgreementAcronym/ids presentes y versión reconocida', () => {
     expect(validateStructure(parse(minimalDjo))).toEqual([]);
   });
 
@@ -44,14 +45,33 @@ describe('validateStructure', () => {
     expect(warnings.some((w) => w.includes('<DJOVer>'))).toBe(true);
   });
 
+  it('advierte si la versión de DJO no es reconocida', () => {
+    const doc = parse('<DJOEH id="DJOEH"><DJO id="DJO"><DJOVer>9.9.9</DJOVer><Agreement><AgreementAcronym>A18</AgreementAcronym></Agreement></DJO></DJOEH>');
+    const warnings = validateStructure(doc);
+    expect(warnings.some((w) => w.includes('9.9.9'))).toBe(true);
+  });
+
+  it('advierte si el XML trae un elemento no definido para su versión', () => {
+    const doc = parse('<DJOEH id="DJOEH"><DJO id="DJO"><DJOVer>1.0.0</DJOVer><Agreement><AgreementAcronym>A18</AgreementAcronym></Agreement><CampoInventado>x</CampoInventado></DJO></DJOEH>');
+    const warnings = validateStructure(doc);
+    expect(warnings.some((w) => w.includes('CampoInventado'))).toBe(true);
+  });
+
+  it('no chequea elementos desconocidos si la versión no es reconocida (evita doble advertencia redundante)', () => {
+    const doc = parse('<DJOEH id="DJOEH"><DJO id="DJO"><DJOVer>9.9.9</DJOVer><CampoInventado>x</CampoInventado></DJO></DJOEH>');
+    const warnings = validateStructure(doc);
+    expect(warnings.filter((w) => w.includes('9.9.9'))).toHaveLength(1);
+    expect(warnings.some((w) => w.includes('CampoInventado'))).toBe(false);
+  });
+
   it('advierte si falta <AgreementAcronym>', () => {
-    const doc = parse('<DJOEH id="DJOEH"><DJO id="DJO"><DJOVer>1.0</DJOVer></DJO></DJOEH>');
+    const doc = parse('<DJOEH id="DJOEH"><DJO id="DJO"><DJOVer>1.0.0</DJOVer></DJO></DJOEH>');
     const warnings = validateStructure(doc);
     expect(warnings.some((w) => w.includes('<AgreementAcronym>'))).toBe(true);
   });
 
   it('advierte si falta <DJO id="DJO"> o <DJOEH id="DJOEH">', () => {
-    const doc = parse('<root><DJOVer>1.0</DJOVer><Agreement><AgreementAcronym>A18</AgreementAcronym></Agreement></root>');
+    const doc = parse('<root><DJOVer>1.0.0</DJOVer><Agreement><AgreementAcronym>A18</AgreementAcronym></Agreement></root>');
     const warnings = validateStructure(doc);
     expect(warnings.some((w) => w.includes('id="DJO"'))).toBe(true);
     expect(warnings.some((w) => w.includes('id="DJOEH"'))).toBe(true);
@@ -90,6 +110,17 @@ describe('decodeXmlBytes / validateBOM', () => {
     expect(hasBOM).toBe(true);
     const warning = validateBOM(hasBOM);
     expect(warning).toMatch(/BOM/);
-    expect(warning).toMatch(/aduanera/i);
+    expect(warning).toMatch(/sistema de gestión/i);
   });
+});
+
+describe.runIf(hasRealFixtures())('validateEncoding/validateStructure contra DJO reales', () => {
+  for (const name of availableRealFixtures()) {
+    it(`${name}: no genera advertencias sobre una DJO real sin modificar`, () => {
+      const xmlContent = loadRealFixture(name);
+      const doc = parse(xmlContent);
+      expect(validateEncoding(xmlContent)).toEqual([]);
+      expect(validateStructure(doc)).toEqual([]);
+    });
+  }
 });

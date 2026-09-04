@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.2.0] - 2026-09-04
+
+Reglas de negocio de DJO confirmadas directamente por el dueño del proyecto (no hay regulador externo como ALADI para COD — Grupo Sauken S.A. define el formato DJO para su propio sistema). Con esa base, se completan dos de los puntos que habían quedado pendientes en v1.1.0.
+
+### Agregado
+
+- **Whitelist de elementos por versión de DJO** ([src/lib/djo-spec.js](src/lib/djo-spec.js)): `ALLOWED_ELEMENTS_BY_VERSION` enumera los elementos válidos para la versión 1.0.0 (única vigente hoy); `getUnknownElements()` detecta cualquier elemento no definido para la versión declarada. Integrado en `validateStructure()` (`src/lib/input-validation.js`), que ahora también valida que `<DJOVer>` sea una versión reconocida (`KNOWN_DJO_VERSIONS`). El `<AgreementAcronym>` sigue sin validarse contra una lista: es meramente informativo en DJO, ningún campo depende de él.
+- **Detección de etapa de emisión** (`getEmissionStage`, `src/components/signature-utils.js` + `EmissionStageAlert`, `src/components/signature-components.js`): borrador sin firmar → firmado por el Exportador (`#DJO`) → datos de la Entidad Habilitada agregados (`<EH>`/`<ApprovalEH>`) sin firmar por el Funcionario Habilitado → completa (`#DJOEH` también firmado). Se muestra con una alerta roja cuando el documento no está completo o el orden de firmas es inconsistente, sin ocultar el resto del contenido ya cargado.
+- Fixtures de DJO reales de referencia (`test/fixtures/real/`, gitignorado) provistas por el dueño del proyecto, usadas para verificar ambas funcionalidades contra documentos reales en cada una de las 4 etapas.
+
+### Corregido
+
+- Los mensajes de `input-validation.js` atribuían erróneamente los requisitos de codificación UTF-8/sin BOM a "ALADI" o a "la autoridad aduanera" — corregido para reflejar que son requisitos del propio formato DJO de Sauken, no de un regulador externo.
+
 ## [1.1.1] - 2026-09-04
 
 ### Corregido

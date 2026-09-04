@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, XCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Field, Section, DocumentSignatures, InputValidationAlert } from './signature-components';
+import { Field, Section, DocumentSignatures, InputValidationAlert, EmissionStageAlert } from './signature-components';
 import { getCountryName } from './country-codes';
 import { validateEncoding, validateStructure, validateSize, validateBOM, decodeXmlBytes } from '@/lib/input-validation';
-import { checkSignatureIntegrity } from './signature-utils';
+import { checkSignatureIntegrity, getEmissionStage } from './signature-utils';
 import { APP_NAME, APP_VERSION } from '@/lib/app-version';
 
 // Función auxiliar para obtener contenido de cualquiera de los dos tipos de etiquetas
@@ -26,6 +26,7 @@ const DJOViewer = () => {
   const [loading, setLoading] = useState(true);
   const [inputWarnings, setInputWarnings] = useState([]);
   const [signatureIntegrity, setSignatureIntegrity] = useState({});
+  const [emissionStage, setEmissionStage] = useState(null);
 
   // Función para procesar el XML
   const processXML = (xmlContent, { hasBOM = false } = {}) => {
@@ -44,6 +45,7 @@ const DJOViewer = () => {
         ...(bomWarning ? [bomWarning] : [])
       ];
       setInputWarnings(warnings);
+      setEmissionStage(getEmissionStage(xmlDoc));
 
       setXmlData(xmlDoc);
       setError(null);
@@ -207,6 +209,9 @@ const DJOViewer = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          {/* Etapa de emisión de la DJO */}
+          <EmissionStageAlert emissionStage={emissionStage} />
+
           {/* Advertencias sobre el archivo XML de entrada */}
           <InputValidationAlert warnings={inputWarnings} />
 

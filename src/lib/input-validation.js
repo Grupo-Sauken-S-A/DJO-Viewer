@@ -1,5 +1,7 @@
+import { KNOWN_DJO_VERSIONS, getUnknownElements } from './djo-spec';
+
 // Tope de tamaño para el XML de entrada. A diferencia del resto de las validaciones de
-// este archivo, esta es una protección de recursos (no una regla de negocio de ALADI) —
+// este archivo, esta es una protección de recursos (no una regla de negocio de DJO) —
 // por eso bloquea en vez de solo advertir.
 export const MAX_XML_SIZE_BYTES = 4 * 1024 * 1024; // 4 MB
 
@@ -22,18 +24,19 @@ export const decodeXmlBytes = (arrayBuffer) => {
   return { content: hasBOM ? decoded.slice(1) : decoded, hasBOM };
 };
 
-// Una DJO con BOM no es un error de esta app en particular, pero ALADI no lo admite —
-// se puede procesar igual (por eso es un warning, no un bloqueo), pero hay que avisar
-// porque es probable que la autoridad aduanera lo rechace por esta causa.
+// Una DJO con BOM no es un error de esta app en particular, pero el formato DJO de Sauken
+// no lo admite — se puede procesar igual (por eso es un warning, no un bloqueo), pero hay
+// que avisar porque el sistema de gestión de certificados podría rechazarlo por esa causa.
 export const validateBOM = (hasBOM) => {
   if (hasBOM) {
-    return 'El archivo tiene una marca BOM (Byte Order Mark) al inicio. Una DJO no debe contener BOM — es probable que la autoridad aduanera rechace este certificado por esa causa, aunque esta aplicación pudo procesarlo igual.';
+    return 'El archivo tiene una marca BOM (Byte Order Mark) al inicio. Una DJO no debe contener BOM — el sistema de gestión de certificados podría rechazar este documento por esa causa, aunque esta aplicación pudo procesarlo igual.';
   }
   return null;
 };
 
-// Chequea la codificación declarada en el prólogo del XML contra UTF-8 (requisito ALADI),
-// y detecta caracteres de reemplazo que delatan una decodificación incorrecta.
+// Chequea la codificación declarada en el prólogo del XML contra UTF-8 (requisito del
+// formato DJO de Sauken), y detecta caracteres de reemplazo que delatan una decodificación
+// incorrecta.
 export const validateEncoding = (xmlContent) => {
   const warnings = [];
   if (!xmlContent) return warnings;
@@ -43,7 +46,7 @@ export const validateEncoding = (xmlContent) => {
   const declaredEncoding = encodingMatch ? encodingMatch[1] : null;
 
   if (declaredEncoding && declaredEncoding.toUpperCase() !== 'UTF-8') {
-    warnings.push(`El XML declara la codificación "${declaredEncoding}", pero ALADI exige UTF-8.`);
+    warnings.push(`El XML declara la codificación "${declaredEncoding}", pero el formato DJO exige UTF-8.`);
   }
 
   if (xmlContent.includes('�')) {
@@ -53,13 +56,12 @@ export const validateEncoding = (xmlContent) => {
   return warnings;
 };
 
-// Chequea que el XML tenga la estructura mínima esperada de una DJO antes de procesarlo.
-//
-// A diferencia del validateStructure de COD-Viewer, este NO valida si <DJOVer>/
-// <AgreementAcronym> son valores "reconocidos" — esta app todavía no tiene una tabla de
-// versiones/acuerdos válidos para DJO (equivalente a AGREEMENT_MAPPING de cod-spec.js),
-// así que inventar esa lista sin la fuente regulatoria correspondiente daría falsos
-// positivos. Pendiente para cuando se arme esa tabla (ver AGENTS.md).
+// Chequea que el XML tenga la estructura mínima esperada de una DJO antes de procesarlo:
+// versión reconocida, acuerdo presente (informativo, no se valida contra una lista — ver
+// djo-spec.js), estructura básica (<DJO id="DJO">/<DJOEH id="DJOEH">), y que no contenga
+// elementos fuera de los definidos para su versión (confirmado por el dueño del proyecto,
+// 2026-09-04: una DJO puede omitir u omitir el contenido de cualquier campo de su versión,
+// pero nunca puede traer un elemento no enumerado para esa versión).
 export const validateStructure = (xmlDoc) => {
   const warnings = [];
   if (!xmlDoc) return warnings;
@@ -69,6 +71,13 @@ export const validateStructure = (xmlDoc) => {
 
   if (!version) {
     warnings.push('No se encontró el elemento <DJOVer> — no se puede determinar la versión de la DJO.');
+  } else if (!KNOWN_DJO_VERSIONS.includes(version)) {
+    warnings.push(`La versión de DJO "${version}" no es una de las versiones reconocidas (${KNOWN_DJO_VERSIONS.join(', ')}).`);
+  } else {
+    const unknownElements = getUnknownElements(xmlDoc, version);
+    if (unknownElements.length > 0) {
+      warnings.push(`El XML contiene elementos no definidos para la versión ${version} de DJO: ${unknownElements.map((tag) => `<${tag}>`).join(', ')}.`);
+    }
   }
 
   if (!agreement) {

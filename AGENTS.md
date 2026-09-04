@@ -11,6 +11,9 @@ Visualizador Next.js de Declaraciones Juradas de Origen (DJO) Digital, para Sauk
 1. **`src/app/api/proxy/route.js` es un proxy abierto a propósito.** Acepta cualquier URL sin allowlist de host (sí valida `Content-Type` y tamaño, ver README). Es el mecanismo que permite que cualquier app externa cargue un DJO propio vía `?xmlUri=`. No lo trates como un bug de seguridad a corregir por iniciativa propia (SSRF): ya fue señalado al usuario y decidió mantenerlo así.
 2. **`next.config.js` NO define headers CORS globales** (se removió `Access-Control-Allow-Origin: *`, ver CHANGELOG v1.1.0) — no reintroducirlo. No aportaba nada al caso de uso real (la carga por `?xmlUri=` ya funciona vía el proxy, server-to-server, nunca sujeto a CORS) y solo ampliaba la superficie de abuso tipo SSRF.
 3. **Sí se valida la firma digital XMLDSig** (presencia, algoritmo, vigencia del certificado contra la fecha real de la firma, firmas duplicadas, e integridad criptográfica real vía `xml-crypto`) — ver `src/components/signature-utils.js` + `POST /api/verify-signature-integrity`. Lo que deliberadamente **no** hace, y no se le debe pedir sin discutirlo primero: validar la cadena de confianza del certificado o consultar revocación (OCSP/CRL) — mismo criterio permanente que adoptó COD-Viewer (ver `docs` de ese proyecto hermano).
+4. **DJO no tiene regulador externo** (confirmado por el dueño del proyecto, 2026-09-04): a diferencia de COD (ALADI), el formato DJO lo define exclusivamente Grupo Sauken S.A. para su propio sistema. No busques ni inventes un documento normativo tipo "ALADI_SEC_di2327" para DJO — no existe. La fuente de verdad de qué campos existen por versión es [src/lib/djo-spec.js](src/lib/djo-spec.js) (`ALLOWED_ELEMENTS_BY_VERSION`), y se actualiza a mano cuando el usuario confirme una versión nueva.
+5. **El `<AgreementAcronym>` es meramente informativo en DJO** — a diferencia de COD, ningún campo, validación ni etapa depende de qué acuerdo declare el documento. No portar el patrón de COD-Viewer donde el acuerdo determina requerimientos de campo (M/O/NC por agreement) — no aplica acá y no hay que construirlo.
+6. **Todo campo definido para la versión debe mostrarse siempre en pantalla, tenga o no contenido** (confirmado por el dueño del proyecto: la validación de contenido la hace un Funcionario Habilitado de forma visual). No portar el patrón de COD-Viewer de ocultar campos "NC" (no corresponde) — en DJO no existe ese concepto.
 
 ## Origen y plataforma
 
@@ -38,13 +41,16 @@ Se usa [versionado semántico](https://semver.org/lang/es/) estándar (`MAJOR.MI
 
 DJO-Viewer nació como copia del proyecto `cod-viewer` (Certificados de Origen Digital, mismo mecanismo de 2 firmas/2 actores: Exportador firma `#DJO`/`#COD`, Entidad Habilitada agrega datos y firma `#DJOEH`/`#CODEH`). COD-Viewer evolucionó por separado y tiene features que DJO-Viewer todavía no — antes de "reinventar" algo de firmas/validación de entrada, revisar primero cómo lo resolvió COD-Viewer (`src/components/signature-utils.js`, `src/lib/input-validation.js` de ese repo) para no duplicar el trabajo de diseño.
 
+**Ya implementado (2026-09-04), adaptado de COD-Viewer con la confirmación del dueño del proyecto:**
+- **Etapa de emisión** (`getEmissionStage`, `src/components/signature-utils.js` + `EmissionStageAlert`): borrador → firmado por el Exportador (`#DJO`) → datos de la EH agregados (`<EH>`/`<ApprovalEH>`) → firmado por la EH (`#DJOEH`). Ver test fixtures reales en `test/fixtures/real/` (gitignorado) para los 4 ejemplos de cada etapa.
+- **Whitelist de elementos por versión** (`src/lib/djo-spec.js`, `getUnknownElements()`, consumida desde `validateStructure()` en `input-validation.js`): reemplaza el equivalente de COD-Viewer ("elementos inesperados" por M/O/NC+acuerdo) con algo más simple, acorde a que DJO no tiene ese concepto — un elemento no enumerado para la versión declarada siempre se reporta, sin importar el acuerdo.
+
 **Deliberadamente pendiente, no implementar sin pedirlo el usuario:**
-- **Etapa de emisión** (`getEmissionStage` en COD-Viewer: borrador/firmado EXP/certificado EH/completo) — excluido a propósito de la puesta al día de 2026-09-04.
-- **Detección de elementos inesperados** (`getUnexpectedElements` en COD-Viewer) — ídem, excluido a propósito.
 - **`Field` con prop `hasError`** (resaltado en rojo de obligatorio faltante) — se dejó tal cual estaba, sin ese resaltado, a pedido explícito del usuario.
-- **Whitelist de `DJOVer`/`AgreementAcronym` reconocidos** en `validateStructure()` — a diferencia de COD-Viewer, no se implementó: haría falta la fuente regulatoria de ALADI para DJO (equivalente a `ALADI_SEC_di2327_Rev13.pdf` que usa COD-Viewer) para no inventar una lista de valores válidos sin respaldo.
-- **Tabla de requerimientos M/O/NC data-driven** (equivalente a `cod-spec.js`/`xml-specifications.js` de COD-Viewer) — hoy `DJOViewer.jsx` tiene `required`/`optional` hardcodeado por campo, sin distinguir por versión/acuerdo. Igual que el punto anterior, requiere la fuente regulatoria de DJO antes de construirse.
-- **Validación contra XSD oficial de ALADI** — requiere los XSD oficiales de DJO por versión, que no están vendorizados en este repo.
+- **Tabla de requerimientos M/O/NC data-driven por acuerdo** — no aplica a DJO (ver regla 5 arriba), no es "pendiente", es un no-implementar permanente.
+- **Validación contra un XSD por versión** — el usuario dejó a criterio del asistente XSD vs. función interna; se eligió función interna (`djo-spec.js`) por ser más simple de mantener y porque la forma real de `<GoodVariant>` (ítems repetidos como hermanos planos, sin wrapper) es incómoda de expresar en XSD estricto. Si en el futuro se prefiere XSD, es un cambio de arquitectura a discutir, no una corrección.
+
+**Pendiente confirmado, sin fecha:** una versión 2.0.0 de DJO agregará campos nuevos (el usuario los especificará más adelante). Cuando llegue, agregar una entrada a `ALLOWED_ELEMENTS_BY_VERSION` en `djo-spec.js` y a `KNOWN_DJO_VERSIONS`.
 
 ## Licencia
 
