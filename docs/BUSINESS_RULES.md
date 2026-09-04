@@ -15,8 +15,9 @@ Fuentes usadas para armar este documento: confirmación directa de Juan Carlos R
 7. [Firmas digitales](#7-firmas-digitales)
 8. [Etapa de emisión detectada por la app](#8-etapa-de-emisión-detectada-por-la-app)
 9. [Estructura del XML real vs. jerarquía visual](#9-estructura-del-xml-real-vs-jerarquía-visual)
-10. [Decisiones de seguridad deliberadas](#10-decisiones-de-seguridad-deliberadas)
-11. [Deuda conocida / pendiente explícito](#11-deuda-conocida--pendiente-explícito)
+10. [El PDF exportado](#10-el-pdf-exportado)
+11. [Decisiones de seguridad deliberadas](#11-decisiones-de-seguridad-deliberadas)
+12. [Deuda conocida / pendiente explícito](#12-deuda-conocida--pendiente-explícito)
 
 ---
 
@@ -194,15 +195,34 @@ Toda la extracción de datos usa `xmlData.querySelector('NombreDeTag')`, que bus
 
 **Caso particular — `<GoodVariant>`**: a diferencia de una lista con un wrapper por ítem, las variantes de un mismo producto aparecen como **elementos hermanos planos** dentro de un único `<GoodVariant>` (ej. `GoodVariantItem`, `GoodVariantName`, `GoodVariantExporterCode`, `GoodVariantDescription` de la variante 1, seguidos por los mismos 4 tags de la variante 2, y así). `DJOViewer.jsx` los separa localizando los límites entre `<GoodVariantItem>` consecutivos sobre el `innerHTML` del contenedor (no hay forma limpia de usar `querySelectorAll` posicional para esto). Es el motivo por el que la whitelist de elementos (sección 3) no distingue "variante 1" de "variante 2" — son los mismos 4 nombres de tag repetidos.
 
-## 10. Decisiones de seguridad deliberadas
+## 10. El PDF exportado
+
+Generado con `jsPDF` puro (sin `jspdf-autotable`: COD-Viewer lo tiene instalado pero no lo usa en ningún lado de su generador, así que DJO-Viewer no arrastra esa dependencia) — misma lógica de negocio que la vista web, reutilizando `src/components/signature-utils.js` sin duplicar la interpretación de firmas/etapa de emisión entre los dos.
+
+| Característica | Valor |
+|---|---|
+| Tamaño de página | A4 (210×297mm), orientación vertical |
+| Compresión | Activada (`compress: true`) |
+| Autor (metadata) | `Grupo Sauken S.A. - ARGENTINA` |
+| Creador (metadata) | `Visualizador DJO` |
+| Nombre de archivo | `DJO_<ApprovalNumber>_<fecha>.pdf` (usa `<ApprovalNumber>` — "Número DJO" en la vista web — como identificador; si no está presente, `DJO_DJO_<fecha>.pdf`) |
+| Versión de la app visible | Pie de página de cada hoja, discreta, igual que en la vista web |
+
+**Estructura**: calca el orden y los campos de `DJOViewer.jsx` sección por sección (información general, acuerdo, exportador, productor, producto y sus variantes, proceso de fabricación, los 4 grupos de materiales, declaración, EH, verificación) — no hay una tabla de datos separada que mantener sincronizada con la vista web.
+
+**Resaltado de campos — diferencia deliberada con COD-Viewer**: cada campo se pinta ámbar (obligatorio) o gris (opcional), igual que los íconos de `<Field>` en la vista web. **A diferencia de COD-Viewer, el PDF de DJO no resalta en rojo un campo obligatorio que esté vacío** — es la misma decisión que ya regía para el componente `<Field>` de la vista web (sección 12), aplicada acá para que el PDF y la pantalla muestren siempre la misma información con la misma severidad visual; un campo vacío se ve simplemente como "No especificado" dentro de su caja ámbar u gris.
+
+**Alertas incluidas, mismo texto que sus contrapartes de la vista web**: advertencias de validación de entrada (`InputValidationAlert` — incluye los elementos no definidos para la versión, sección 3, ya que viajan en el mismo arreglo de warnings) y etapa de emisión (`EmissionStageAlert`, con marca de agua diagonal "EN PROCESO — NO VÁLIDO" en todas las páginas cuando la DJO no está completa). **No hay alerta de "elementos inesperados" ni de validación XSD** — ninguna de las dos existe en DJO-Viewer (secciones 4 y 12).
+
+## 11. Decisiones de seguridad deliberadas
 
 - **El proxy (`/api/proxy`) no tiene allowlist de host ni de esquema, a propósito**: las DJO pueden estar alojadas en cualquier red, interna o externa, según el emisor. Esto está documentado con un comentario en el propio código para que no se "corrija" por error en el futuro.
 - El proxy sí valida `Content-Type` de la respuesta remota (sección 6) y el código HTTP (`response.ok`) — pero no restringe a qué *host* se puede apuntar.
 - **`next.config.js` no agrega headers CORS globales** — se removieron (v1.1.0) porque no aportaban nada al caso de uso real (la carga por `?xmlUri=` ya funciona vía el proxy, server-to-server, nunca sujeto a CORS) y solo ampliaban la superficie de abuso tipo SSRF.
 - **Cadena de confianza del certificado y revocación (OCSP/CRL): NO SOPORTADO, decisión permanente, no una tarea pendiente** — mismo criterio que adoptó COD-Viewer.
 
-## 11. Deuda conocida / pendiente explícito
+## 12. Deuda conocida / pendiente explícito
 
-- **`Field` sin resaltado de error** (`hasError`) para un campo obligatorio faltante — dejado tal cual a pedido explícito del dueño del proyecto (2026-09-04).
+- **`Field` sin resaltado de error** (`hasError`) para un campo obligatorio faltante, tanto en la vista web como en el PDF (sección 10) — dejado tal cual a pedido explícito del dueño del proyecto (2026-09-04).
 - **Versión 2.0.0**: agregará campos nuevos, todavía sin especificar (sección 3).
 - **No aplican a DJO, no son deuda**: la tabla M/O/NC por acuerdo y la validación contra un XSD oficial externo — ninguna de las dos tiene sentido para DJO dado que no hay acuerdo-dependencia (sección 4) ni regulador externo (sección 1). Si en el futuro se quiere una validación de esquema, sería contra un XSD propio de Sauken, no una adaptación del de ALADI.

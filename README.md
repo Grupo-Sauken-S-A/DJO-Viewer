@@ -11,6 +11,7 @@ Desarrollado por [Sauken](https://sauken.com.ar/) para [Certificados de Origen](
 - Muestra **todos** los campos definidos para la versión de la DJO, tengan o no contenido — a diferencia de COD, en DJO no hay campos que se oculten según acuerdo comercial (el acuerdo es meramente informativo).
 - Verifica las firmas digitales (XMLDSig) de los elementos `DJO` y `DJOEH`: algoritmo, firmante, si el certificado estaba vigente en el momento real de esa firma (no en el momento de mirarlo), y la **integridad criptográfica real** (recalcula el digest y verifica `SignatureValue` — detecta si el documento fue editado después de firmarlo, vía [`/api/verify-signature-integrity`](src/app/api/verify-signature-integrity/route.js)). No valida revocación ni la cadena de confianza del certificado.
 - Detecta en qué etapa del proceso de emisión está la DJO (borrador, firmado por el Exportador, aprobado por la Entidad Habilitada, completo) y lo avisa si no está terminado, o si el orden de firmas es inconsistente.
+- Exporta la DJO visualizada a PDF (`jsPDF`), A4 comprimido, con la misma estructura, advertencias y estado de firmas que la vista web.
 
 ## Más documentación
 
@@ -45,7 +46,7 @@ npm run test:watch
 
 ## Tests
 
-El suite (`npm test`) cubre `src/lib/input-validation.js`, `src/lib/djo-spec.js`, `src/components/signature-utils.js` y `POST /api/verify-signature-integrity` con casos sintéticos, más `test/pipeline.test.js`, que replica `DJOViewer.processXML()` de punta a punta (parseo, validaciones, etapa de emisión).
+El suite (`npm test`) cubre `src/lib/input-validation.js`, `src/lib/djo-spec.js`, `src/components/signature-utils.js` y `POST /api/verify-signature-integrity` con casos sintéticos, más `test/pipeline.test.js` (replica `DJOViewer.processXML()` de punta a punta) y `src/components/pdf-generator.test.js` (test de humo: genera el PDF completo contra las 6 DJO reales y variantes mutadas, sin validar contenido visual/posicional).
 
 Una parte de los tests usa DJO reales de referencia como fixtures (para probar contra la estructura real y las 4 etapas del proceso de emisión). Esos XML **no están en el repositorio** por contener datos de negocio reales — van en `test/fixtures/real/` (gitignorado) y los tests que los necesitan se saltan solos si el directorio no existe, así que `npm test` funciona igual en un clon nuevo del repo, solo que con menos cobertura.
 
@@ -59,6 +60,7 @@ src/
     layout.js, page.js                        # layout y entrada de Next.js (App Router)
   components/
     DJOViewer.jsx             # componente principal: carga, valida, parsea y renderiza la DJO
+    pdf-generator.js         # genera el PDF con la misma lógica de negocio que la vista web
     signature-components.js  # UI: campos y alertas (entrada, etapa de emisión, firmas)
     signature-utils.js       # firmas digitales (presencia/vigencia/integridad) + etapa de emisión
     country-codes.js         # mapeo de códigos de país a nombre

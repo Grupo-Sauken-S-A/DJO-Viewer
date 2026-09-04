@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.3.0] - 2026-09-04
+
+### Agregado
+
+- **Exportar a PDF** (`src/components/pdf-generator.js`, botón "Ver en PDF" junto a "Cargar otro archivo"): mismo patrón de clase basado en `jsPDF` que usa COD-Viewer (secciones por color/nivel, cajas de campo ámbar/gris, listas con encabezado por ítem, estado de firmas y alertas reutilizando `signature-utils.js` sin duplicar lógica) — sin `jspdf-autotable`, que COD-Viewer tiene como dependencia pero no llega a usar en ningún lado de su generador. La estructura, el orden y los campos calcan exactamente los de `DJOViewer.jsx` (información general, acuerdo, exportador, productor, producto y sus variantes, proceso de fabricación, los 4 grupos de materiales, declaración, EH y verificación). Archivo `DJO_<ApprovalNumber>_<fecha>.pdf`. Marca de agua diagonal "EN PROCESO — NO VÁLIDO" cuando la DJO no está completa. Detalle completo en `docs/BUSINESS_RULES.md` §10.
+- `src/components/pdf-generator.test.js`: test de humo (genera el PDF completo contra las 6 DJO reales y variantes mutadas — sin firma del FH, con advertencias, sin certificado X.509 — verificando que no lance excepción), mismo patrón que el de COD-Viewer.
+- Verificado manualmente en navegador (no solo en jsdom): el Blob generado es un PDF válido (`%PDF-1.3` ... `%%EOF`) tanto para una DJO completa como para una en etapa 1 (con marca de agua), sin errores de consola.
+
+### Nota de diseño
+
+A diferencia de COD-Viewer, el PDF de DJO **no** resalta en rojo un campo obligatorio que esté vacío — se mantiene coherente con que el componente `<Field>` de la vista web tampoco lo hace (decisión explícita del dueño del proyecto, v1.1.0/v1.2.0). Un campo obligatorio vacío se ve como "No especificado" dentro de su caja ámbar, igual en pantalla que en el PDF.
+
 ## [1.2.3] - 2026-09-04
 
 Auditoría de consistencia de toda la documentación tras la instalación en producción (ver `docs/DEPLOYMENT.md`, nuevo en esta versión).

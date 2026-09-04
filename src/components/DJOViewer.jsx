@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Upload, XCircle } from 'lucide-react';
+import { Upload, XCircle, FileText } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Field, Section, DocumentSignatures, InputValidationAlert, EmissionStageAlert } from './signature-components';
+import { generateDJOPDF } from './pdf-generator';
 import { getCountryName } from './country-codes';
 import { validateEncoding, validateStructure, validateSize, validateBOM, decodeXmlBytes } from '@/lib/input-validation';
 import { checkSignatureIntegrity, getEmissionStage } from './signature-utils';
@@ -27,6 +28,7 @@ const DJOViewer = () => {
   const [inputWarnings, setInputWarnings] = useState([]);
   const [signatureIntegrity, setSignatureIntegrity] = useState({});
   const [emissionStage, setEmissionStage] = useState(null);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
 
   // Función para procesar el XML
   const processXML = (xmlContent, { hasBOM = false } = {}) => {
@@ -87,6 +89,23 @@ const DJOViewer = () => {
       processXML(content, { hasBOM });
     } catch (err) {
       setError('Error al procesar el archivo: ' + err.message);
+    }
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!xmlData) return;
+
+    try {
+      setPdfGenerating(true);
+      const result = await generateDJOPDF(xmlData, { inputWarnings, emissionStage, signatureIntegrity });
+
+      if (!result.success) {
+        setError(`Error al generar PDF: ${result.error}`);
+      }
+    } catch (err) {
+      setError(`Error al generar PDF: ${err.message}`);
+    } finally {
+      setPdfGenerating(false);
     }
   };
 
@@ -197,15 +216,35 @@ const DJOViewer = () => {
     <Card>
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <CardTitle>Declaración Jurada de Origen Digital</CardTitle>
-        <label className="btn-primary cursor-pointer text-center">
-          Cargar otro archivo
-          <input
-            type="file"
-            accept=".xml"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-        </label>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={handleGeneratePDF}
+            disabled={pdfGenerating}
+            className="btn-primary cursor-pointer text-center flex items-center justify-center gap-2"
+          >
+            {pdfGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Generando PDF...
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4" />
+                Ver en PDF
+              </>
+            )}
+          </button>
+          <label className="btn-primary cursor-pointer text-center flex items-center justify-center gap-2">
+            <Upload className="h-4 w-4" />
+            Cargar otro archivo
+            <input
+              type="file"
+              accept=".xml"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </label>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">

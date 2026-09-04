@@ -6,7 +6,7 @@ Esta guía explica de qué se trata la aplicación, qué es una DJO, cómo se co
 
 **djo-viewer** es un visualizador de **Declaraciones Juradas de Origen (DJO) Digital** — un formato que define exclusivamente Grupo Sauken S.A. para su propio sistema de gestión de certificados de origen (a diferencia de COD, que sigue el estándar ALADI/MERCOSUR).
 
-La aplicación toma un archivo XML de DJO (subido a mano o vía URL), lo valida (versión, elementos permitidos, codificación, tamaño), muestra sus datos, informa el estado de sus firmas digitales y en qué etapa del proceso de emisión se encuentra.
+La aplicación toma un archivo XML de DJO (subido a mano o vía URL), lo valida (versión, elementos permitidos, codificación, tamaño), muestra sus datos, informa el estado de sus firmas digitales y en qué etapa del proceso de emisión se encuentra, y permite exportar todo eso a PDF (`jsPDF`, misma lógica de negocio que la vista web — ver [`BUSINESS_RULES.md` §10](BUSINESS_RULES.md#10-el-pdf-exportado)).
 
 ## 2. Qué es una DJO, en concepto
 
@@ -50,6 +50,8 @@ src/
   components/
     DJOViewer.jsx              # componente principal: carga el XML, corre las
                                 # validaciones y arma la vista
+    pdf-generator.js           # genera el PDF con la misma lógica de negocio que
+                                # la vista web (sin tabla de datos separada)
     signature-components.js    # UI: campos, alertas (validación de entrada, etapa
                                 # de emisión, estado de firmas)
     signature-utils.js         # firmas digitales + etapa de emisión (sin UI)
@@ -76,6 +78,7 @@ El XML real de una DJO tiene más anidamiento del que sugiere la interfaz (ver l
 
 - Para tocar qué elementos son válidos por versión: `src/lib/djo-spec.js`, y leer [`BUSINESS_RULES.md` §3`](BUSINESS_RULES.md#3-versiones-de-djo-y-elementos-permitidos) antes de cambiar nada.
 - Para tocar validaciones de entrada o de firmas: `src/lib/input-validation.js` / `src/components/signature-utils.js`, y [`BUSINESS_RULES.md` §6-8`](BUSINESS_RULES.md#6-validaciones-sobre-el-archivo-xml-de-entrada).
+- Para tocar el PDF: `src/components/pdf-generator.js`, y [`BUSINESS_RULES.md` §10`](BUSINESS_RULES.md#10-el-pdf-exportado) — si se agrega un campo nuevo a `DJOViewer.jsx`, agregarlo también acá (no hay una fuente de datos única compartida entre los dos, a diferencia de las validaciones/firmas).
 - Para instalar, correr o entender la estructura de carpetas: [`README.md`](../README.md).
 - Para saber cómo corre en producción o instalar una versión nueva ahí: [`DEPLOYMENT.md`](DEPLOYMENT.md).
 - Antes de "reinventar" algo que suene a que ya debería existir: revisar primero el proyecto hermano `C:\cod-viewer` (mismo mecanismo de firmas) — puede que ya esté resuelto ahí y solo haga falta adaptarlo, aunque **no todo aplica igual** (ver `AGENTS.md`, sección "Proyecto hermano: COD-Viewer").
