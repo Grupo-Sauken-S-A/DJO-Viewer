@@ -20,6 +20,7 @@ Desarrollado por [Sauken](https://sauken.com.ar/) para [Certificados de Origen](
 - [`AGENTS.md`](AGENTS.md) — reglas de diseño que no hay que "corregir" por iniciativa propia (proxy abierto, sin CORS global, etc.), pensado para agentes de IA que trabajen en este repo.
 - [`SECURITY.md`](SECURITY.md) — qué decisiones de seguridad son intencionales (no reportar como vulnerabilidad) y cómo reportar un problema real.
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — cómo corre en producción (servidor, systemd, puerto, proxy) y cómo instalar una versión nueva.
+- [`docs/XML_INTEGRATION_GUIDE.html`](docs/XML_INTEGRATION_GUIDE.html) — guía visual para plataformas externas que generan el XML de una DJO: estructura del documento, proceso de firma en 4 etapas, comparativa v1.0.0 vs v2.0.0 y referencia completa de campos. Se abre directamente en el navegador (no requiere servidor).
 
 ## Requisitos
 

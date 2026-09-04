@@ -5,6 +5,12 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.4.5] - 2026-09-04
+
+### Agregado
+
+- `docs/XML_INTEGRATION_GUIDE.html`: guía visual para plataformas externas que generan el XML de una DJO — anatomía del documento (con el alcance de cada firma marcado por color), las 4 etapas del proceso de emisión, comparativa completa v1.0.0 vs v2.0.0 (con un caso real de acuerdos múltiples) y referencia exhaustiva de todos los campos por sección, con obligatoriedad. Es un HTML autocontenido (solo depende de Google Fonts por CDN) que se navega abriéndolo directo en el navegador, sin servidor. Enlazado desde el README junto al resto de la documentación.
+
 ## [1.4.4] - 2026-09-04
 
 ### Seguridad
