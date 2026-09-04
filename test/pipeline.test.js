@@ -55,7 +55,7 @@ describe('pipeline de carga: entradas que no son una DJO válida', () => {
   });
 });
 
-describe.runIf(hasRealFixtures())('pipeline de carga contra las 6 DJO reales', () => {
+describe.runIf(hasRealFixtures())('pipeline de carga contra las DJO reales (v1.0.0 y v2.0.0)', () => {
   const expectedStageByFixture = {
     'djo-exportador.xml': 1,
     'djo-exportador-signed.xml': 2,
@@ -63,6 +63,7 @@ describe.runIf(hasRealFixtures())('pipeline de carga contra las 6 DJO reales', (
     'djo-exportador-signed-eh-signed.xml': 4,
     'djo-ejemplo-1-sin-firmas.xml': 'anomalo',
     'djo-ejemplo-2-sin-firmas.xml': 'anomalo',
+    'djo-ejemplo-v200.xml': 'anomalo', // DJOVer 2.0.0, mismo caso: EH/ApprovalEH sin firmas
   };
 
   for (const name of availableRealFixtures()) {

@@ -38,13 +38,30 @@ describe('getUnknownElements', () => {
     const doc = parse('<root><CampoInventado>x</CampoInventado></root>');
     expect(getUnknownElements(doc, '9.9.9')).toEqual([]);
   });
+
+  it('AgreementQty/NomenclatureType (v2.0.0) se reportan como desconocidos bajo 1.0.0', () => {
+    const doc = parse('<DJO id="DJO"><DJOVer>1.0.0</DJOVer><AgreementQty>3</AgreementQty></DJO>');
+    expect(getUnknownElements(doc, '1.0.0')).toEqual(['AgreementQty']);
+  });
+
+  it('AgreementQty/NomenclatureType/NomenclatureRev/AgreementNomenclatureCode son válidos bajo 2.0.0', () => {
+    const doc = parse(
+      '<DJO id="DJO"><DJOVer>2.0.0</DJOVer><AgreementQty>1</AgreementQty>' +
+      '<Agreement><AgreementAcronym>A18</AgreementAcronym><OriginRule>B</OriginRule>' +
+      '<NomenclatureType>NCM</NomenclatureType><NomenclatureRev>2022</NomenclatureRev>' +
+      '<AgreementNomenclatureCode>0901.11.90</AgreementNomenclatureCode></Agreement></DJO>'
+    );
+    expect(getUnknownElements(doc, '2.0.0')).toEqual([]);
+  });
 });
 
 describe.runIf(hasRealFixtures())('getUnknownElements contra DJO reales', () => {
   for (const name of availableRealFixtures()) {
-    it(`${name}: no tiene elementos fuera de los definidos para ${KNOWN_DJO_VERSIONS[0]}`, () => {
+    it(`${name}: no tiene elementos fuera de los definidos para su propia versión declarada`, () => {
       const doc = parse(loadRealFixture(name));
-      expect(getUnknownElements(doc, KNOWN_DJO_VERSIONS[0])).toEqual([]);
+      const version = doc.querySelector('DJOVer')?.textContent?.trim();
+      expect(KNOWN_DJO_VERSIONS).toContain(version);
+      expect(getUnknownElements(doc, version)).toEqual([]);
     });
   }
 });

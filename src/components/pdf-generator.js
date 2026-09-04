@@ -96,7 +96,14 @@ class PDFGenerator {
     this.currentY = this.margin;
 
     this.djoVer = xmlData.querySelector('DJOVer')?.textContent?.trim();
-    this.agreementAcronym = xmlData.querySelector('AgreementAcronym')?.textContent?.trim();
+    // A partir de DJOVer 2.0.0, <Agreement> es repetible — ver docs/BUSINESS_RULES.md §3.
+    this.hasMultipleAgreements = this.djoVer === '2.0.0';
+    this.agreementAcronym = this.hasMultipleAgreements
+      ? Array.from(xmlData.querySelectorAll('Agreement'))
+          .map((a) => a.querySelector('AgreementAcronym')?.textContent)
+          .filter(Boolean)
+          .join(', ')
+      : xmlData.querySelector('AgreementAcronym')?.textContent?.trim();
     this.inputWarnings = options.inputWarnings || [];
     this.emissionStage = options.emissionStage || null;
     this.signatureIntegrity = options.signatureIntegrity || {};
@@ -139,7 +146,7 @@ class PDFGenerator {
       this.doc.setFontSize(FONTS.small.size);
       this.doc.setFont('helvetica', 'normal');
       const subtitle = this.agreementAcronym
-        ? `Versión ${this.djoVer} · Acuerdo ${this.agreementAcronym}`
+        ? `Versión ${this.djoVer} · ${this.hasMultipleAgreements ? 'Acuerdos' : 'Acuerdo'} ${this.agreementAcronym}`
         : `Versión ${this.djoVer}`;
       this.doc.text(subtitle, this.pageWidth / 2, this.margin + 13, { align: 'center' });
     }
@@ -335,6 +342,21 @@ class PDFGenerator {
 
       itemRenderer(item, index);
     });
+  }
+
+  // Un bloque por acuerdo (solo DJOVer 2.0.0 — ver docs/BUSINESS_RULES.md §3). Cada acuerdo
+  // trae su propia nomenclatura porque puede clasificar el mismo producto con un código
+  // distinto según el sistema/revisión de nomenclatura que use ese acuerdo en particular.
+  renderAgreement(agreementEl) {
+    this.addMultiField([
+      { label: 'Acrónimo', value: agreementEl.querySelector('AgreementAcronym')?.textContent, required: true },
+      { label: 'Norma de origen', value: agreementEl.querySelector('OriginRule')?.textContent, required: true }
+    ], 20);
+    this.addMultiField([
+      { label: 'Tipo de nomenclatura', value: agreementEl.querySelector('NomenclatureType')?.textContent, required: true },
+      { label: 'Revisión de nomenclatura', value: agreementEl.querySelector('NomenclatureRev')?.textContent, required: true }
+    ], 20);
+    this.addField('Código de nomenclatura del acuerdo', agreementEl.querySelector('AgreementNomenclatureCode')?.textContent, { required: true, indent: 20 });
   }
 
   renderGoodVariant(variant) {
@@ -613,11 +635,18 @@ class PDFGenerator {
         { label: 'Tipo de remitente', value: djo?.querySelector('DJOSubmitterType')?.textContent, required: true }
       ], 15);
 
-      this.addSection('Acuerdo comercial', 3);
-      this.addMultiField([
-        { label: 'Acrónimo', value: agreement?.querySelector('AgreementAcronym')?.textContent, required: true },
-        { label: 'Norma de origen', value: agreement?.querySelector('OriginRule')?.textContent, required: true }
-      ], 15);
+      if (this.hasMultipleAgreements) {
+        const agreements = Array.from(djo?.querySelectorAll('Agreement') || []);
+        this.addSection('Acuerdos comerciales', 3, agreements.length);
+        this.addField('Cantidad de acuerdos', djo?.querySelector('AgreementQty')?.textContent, { required: true, indent: 15 });
+        agreements.forEach((agreementEl) => this.renderAgreement(agreementEl));
+      } else {
+        this.addSection('Acuerdo comercial', 3);
+        this.addMultiField([
+          { label: 'Acrónimo', value: agreement?.querySelector('AgreementAcronym')?.textContent, required: true },
+          { label: 'Norma de origen', value: agreement?.querySelector('OriginRule')?.textContent, required: true }
+        ], 15);
+      }
 
       this.addSection('Datos del exportador', 3);
       this.addField('País', exporter?.querySelector('ExporterCountry')?.textContent, { required: true, indent: 15 });

@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.4.0] - 2026-09-04
+
+Soporte para la nueva versión de formato **DJOVer 2.0.0**, confirmada con un ejemplo real del dueño del proyecto. **v1.0.0 y v2.0.0 quedan ambas vigentes indefinidamente** — no es una migración.
+
+### Agregado
+
+- `src/lib/djo-spec.js`: `KNOWN_DJO_VERSIONS` incluye `'2.0.0'`; `ALLOWED_ELEMENTS_BY_VERSION['2.0.0']` agrega `AgreementQty`, `NomenclatureType`, `NomenclatureRev`, `AgreementNomenclatureCode` sobre la lista de v1.0.0 (todo lo demás es idéntico entre ambas versiones).
+- **`<Agreement>` repetible en v2.0.0**: una DJO puede declararse bajo varios acuerdos comerciales a la vez, cada uno con su propia norma de origen y su propia clasificación arancelaria (nomenclatura/revisión/código pueden variar por acuerdo para el mismo producto). `DJOViewer.jsx` y `pdf-generator.js` ahora ramifican explícitamente por `DJOVer` (primera vez que la versión determina *estructura*, no solo la whitelist — ver `docs/BUSINESS_RULES.md` §3): v1.0.0 sigue mostrando una única sección "Acuerdo comercial"; v2.0.0 muestra "Acuerdos comerciales" con la cantidad declarada (`AgreementQty`) primero, seguida de un bloque por cada `<Agreement>`.
+- `test/fixtures/real/djo-ejemplo-v200.xml`: DJO real de referencia en v2.0.0 (gitignorada), usada en los tests de `djo-spec`, `input-validation`, `signature-utils`, `pipeline` y `pdf-generator`.
+- Tests nuevos: whitelist de v2.0.0 (sintéticos y contra el fixture real), cada fixture real ahora se valida contra **su propia** versión declarada (antes se asumía 1.0.0 para todas), etapa de emisión y generación de PDF verificadas también para el fixture v2.0.0.
+
+### Corregido
+
+- `docs/BUSINESS_RULES.md`/`AGENTS.md` ya no dicen que 1.0.0 es "la única versión" ni dejan v2.0.0 como "pendiente sin fecha" — quedan documentadas ambas versiones vigentes y el patrón a seguir si aparece una tercera con otra diferencia estructural.
+
 ## [1.3.1] - 2026-09-04
 
 ### Corregido

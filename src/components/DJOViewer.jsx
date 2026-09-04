@@ -212,6 +212,13 @@ const DJOViewer = () => {
   const formDJO = xmlData.querySelector('FormDJO');
   const agreement = xmlData.querySelector('Agreement');
 
+  // A partir de DJOVer 2.0.0, <Agreement> es repetible (uno por acuerdo bajo el que se
+  // declara la DJO, con su propia nomenclatura) — ver docs/BUSINESS_RULES.md §3. v1.0.0 y
+  // v2.0.0 quedan ambas vigentes, así que se ramifica por versión en vez de reemplazar.
+  const djoVer = djo?.querySelector('DJOVer')?.textContent?.trim();
+  const hasMultipleAgreements = djoVer === '2.0.0';
+  const agreements = hasMultipleAgreements ? Array.from(djo?.querySelectorAll('Agreement') || []) : [];
+
   return (
     <Card>
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -276,19 +283,65 @@ const DJOViewer = () => {
                   />
                 </Section>
 
-                {/* Acuerdo */}
-                <Section title="Acuerdo comercial" level={3} className="col-span-full">
-                  <Field 
-                    label="Acrónimo" 
-                    value={agreement?.querySelector('AgreementAcronym')?.textContent}
-                    required={true}
-                  />
-                  <Field 
-                    label="Norma de origen" 
-                    value={agreement?.querySelector('OriginRule')?.textContent}
-                    required={true}
-                  />
-                </Section>
+                {/* Acuerdo(s) — estructura distinta según DJOVer, ver docs/BUSINESS_RULES.md §3 */}
+                {hasMultipleAgreements ? (
+                  <Section
+                    title="Acuerdos comerciales"
+                    level={3}
+                    className="col-span-full"
+                    count={agreements.length}
+                  >
+                    <Field
+                      label="Cantidad de acuerdos"
+                      value={djo?.querySelector('AgreementQty')?.textContent}
+                      required={true}
+                    />
+                    {agreements.map((agreementEl, index) => (
+                      <div key={index} className="item-card goods">
+                        <Field
+                          label="Acrónimo"
+                          value={agreementEl.querySelector('AgreementAcronym')?.textContent}
+                          required={true}
+                        />
+                        <Field
+                          label="Norma de origen"
+                          value={agreementEl.querySelector('OriginRule')?.textContent}
+                          required={true}
+                        />
+                        <div className="flex-row-container">
+                          <Field
+                            label="Tipo de nomenclatura"
+                            value={agreementEl.querySelector('NomenclatureType')?.textContent}
+                            required={true}
+                          />
+                          <Field
+                            label="Revisión de nomenclatura"
+                            value={agreementEl.querySelector('NomenclatureRev')?.textContent}
+                            required={true}
+                          />
+                        </div>
+                        <Field
+                          label="Código de nomenclatura del acuerdo"
+                          value={agreementEl.querySelector('AgreementNomenclatureCode')?.textContent}
+                          required={true}
+                        />
+                      </div>
+                    ))}
+                  </Section>
+                ) : (
+                  <Section title="Acuerdo comercial" level={3} className="col-span-full">
+                    <Field
+                      label="Acrónimo"
+                      value={agreement?.querySelector('AgreementAcronym')?.textContent}
+                      required={true}
+                    />
+                    <Field
+                      label="Norma de origen"
+                      value={agreement?.querySelector('OriginRule')?.textContent}
+                      required={true}
+                    />
+                  </Section>
+                )}
 
                 {/* Exportador */}
                 <Section title="Datos del exportador" level={3} className="col-span-full">

@@ -21,9 +21,11 @@ Este mecanismo de dos firmas en dos momentos es la clave para entender casi todo
 
 ## 3. Versión: el único eje relevante (a diferencia de COD)
 
-COD tiene dos ejes que cruzan todas sus reglas (versión **y** acuerdo comercial). DJO solo tiene uno: **`<DJOVer>`** (hoy: `1.0.0`, única versión conocida). El acuerdo comercial (`<AgreementAcronym>`) existe como campo pero es **meramente informativo** — ningún requerimiento de campo ni validación depende de él. No busques ni construyas un "AGREEMENT_MAPPING" para DJO como el que tiene COD-Viewer: no aplica.
+COD tiene dos ejes que cruzan todas sus reglas (versión **y** acuerdo comercial). DJO solo tiene uno: **`<DJOVer>`** — hoy conviven **`1.0.0` y `2.0.0`**, ambas vigentes indefinidamente (no es una migración). El acuerdo comercial (`<AgreementAcronym>`) sigue siendo **meramente informativo** — ningún requerimiento de campo ni validación depende de *qué* acuerdo sea. No busques ni construyas un "AGREEMENT_MAPPING" para DJO como el que tiene COD-Viewer: no aplica.
 
-Lo que sí depende de la versión es qué **elementos** puede traer el XML — `src/lib/djo-spec.js` mantiene esa lista (`ALLOWED_ELEMENTS_BY_VERSION`) y la valida `getUnknownElements()`. A diferencia de COD, no hay una tabla de requerimiento (M/O/NC) por campo: **todo elemento definido para la versión se muestra siempre**, tenga o no contenido (la revisión de contenido la hace un humano — el FH — de forma visual). Ver [`BUSINESS_RULES.md` §3-5](BUSINESS_RULES.md#3-versiones-de-djo-y-elementos-permitidos) para el detalle y el porqué.
+Lo que sí depende de la versión es qué **elementos** puede traer el XML — `src/lib/djo-spec.js` mantiene esa lista por versión (`ALLOWED_ELEMENTS_BY_VERSION`) y la valida `getUnknownElements()`. A diferencia de COD, no hay una tabla de requerimiento (M/O/NC) por campo: **todo elemento definido para la versión se muestra siempre**, tenga o no contenido (la revisión de contenido la hace un humano — el FH — de forma visual).
+
+**Desde v2.0.0, la versión también determina la ESTRUCTURA**, no solo la whitelist: `<Agreement>` pasa de único a repetible (con nomenclatura propia por acuerdo). Es la primera vez que `DJOViewer.jsx`/`pdf-generator.js` ramifican por `DJOVer` para decidir *cómo* renderizar algo, no solo *si* un elemento es válido — ver [`BUSINESS_RULES.md` §3](BUSINESS_RULES.md#3-versiones-de-djo-y-elementos-permitidos) para el detalle completo y el patrón a seguir si aparece otra diferencia estructural en una versión futura.
 
 ## 4. Firmas digitales: qué se verifica y qué no
 

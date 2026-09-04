@@ -6,6 +6,7 @@ const REAL_FIXTURES_DIR = path.resolve(__dirname, '../fixtures/real');
 export const REAL_FIXTURE_NAMES = [
   'djo-ejemplo-1-sin-firmas.xml',
   'djo-ejemplo-2-sin-firmas.xml',
+  'djo-ejemplo-v200.xml', // DJOVer 2.0.0 — Agreement repetible, sin firmas (mismo caso "anomalo" que los dos anteriores)
   'djo-exportador.xml',
   'djo-exportador-signed.xml',
   'djo-exportador-signed-eh.xml',

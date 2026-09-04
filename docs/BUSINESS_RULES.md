@@ -81,13 +81,27 @@ Confirmado empíricamente contra 6 DJO de ejemplo reales, provistas por el dueñ
 
 ## 3. Versiones de DJO y elementos permitidos
 
-Versión vigente hoy: **1.0.0** (única conocida). No hay "familias" de versiones ni normalización — la app lee `<DJOVer>` tal cual y lo compara contra `KNOWN_DJO_VERSIONS` (`src/lib/djo-spec.js`).
+Versiones vigentes hoy: **1.0.0 y 2.0.0**, ambas indefinidamente (confirmado por el dueño del proyecto, 2026-09-04) — **no** es una migración donde 2.0.0 reemplace a 1.0.0, un emisor puede seguir usando cualquiera de las dos. No hay "familias" de versiones ni normalización — la app lee `<DJOVer>` tal cual y lo compara contra `KNOWN_DJO_VERSIONS` (`src/lib/djo-spec.js`).
 
-**Regla central (confirmada por el dueño del proyecto, 2026-09-04)**: una DJO puede omitir o dejar vacío cualquier campo definido para su versión, pero **nunca** puede traer un elemento no enumerado para esa versión. `ALLOWED_ELEMENTS_BY_VERSION['1.0.0']` (`src/lib/djo-spec.js`) es la lista completa (armada cruzando las 6 DJO de ejemplo contra el código de `DJOViewer.jsx`); `getUnknownElements()` la recorre y reporta cualquier tag fuera de esa lista, ignorando la firma digital (namespace XMLDSig) y el sobre SOAP raíz (`ns1:Envelope`/`ns1:Affidavit`, protocolo de transporte, no contenido de la DJO).
+**Regla central (confirmada por el dueño del proyecto, 2026-09-04)**: una DJO puede omitir o dejar vacío cualquier campo definido para su versión, pero **nunca** puede traer un elemento no enumerado para esa versión. `ALLOWED_ELEMENTS_BY_VERSION['1.0.0']`/`['2.0.0']` (`src/lib/djo-spec.js`) son la lista completa de cada una; `getUnknownElements()` la recorre y reporta cualquier tag fuera de esa lista, ignorando la firma digital (namespace XMLDSig) y el sobre SOAP raíz (`ns1:Envelope`/`ns1:Affidavit`, protocolo de transporte, no contenido de la DJO).
 
 **Por qué no es un XSD**: se evaluaron ambos enfoques (XSD por versión vs. función interna) y se eligió la función interna — más simple de mantener a mano, y la forma real de `<GoodVariant>` (varios ítems como hermanos planos sin wrapper por ítem, ver sección 9) es incómoda de expresar en un XSD estricto.
 
-**Versión futura 2.0.0**: el dueño del proyecto confirmó que habrá una v2.0.0 con campos nuevos, a especificar más adelante. Cuando llegue, agregar una entrada a `ALLOWED_ELEMENTS_BY_VERSION` y a `KNOWN_DJO_VERSIONS`.
+### Qué cambia en v2.0.0 (confirmado con un ejemplo real, 2026-09-04)
+
+`<Agreement>` pasa de **único** (v1.0.0) a **repetible** (v2.0.0) — una DJO puede declararse simultáneamente bajo varios acuerdos comerciales, cada uno con su propia norma de origen y su propia clasificación arancelaria (porque el mismo producto puede tener un código distinto según el sistema/revisión de nomenclatura de cada acuerdo — ej. NCM 2022 vs. NALADISA 2016 clasificando el mismo café con códigos diferentes).
+
+| | v1.0.0 | v2.0.0 |
+|---|---|---|
+| `<Agreement>` | Único | Repetible — uno por acuerdo, cada bloque **autocontenido** (no son hermanos planos como `<GoodVariant>`; cada `<Agreement>...</Agreement>` trae sus propios hijos, así que `querySelectorAll('Agreement')` alcanza sin ningún truco) |
+| Cantidad declarada | — (implícita, siempre 1) | `<AgreementQty>`, hermano de `<DJOSubmitterType>`, antes del primer `<Agreement>` |
+| Campos dentro de `<Agreement>` | `AgreementAcronym`, `OriginRule` | Los mismos, más `NomenclatureType` (ej. `NCM`, `NALADISA`), `NomenclatureRev` (ej. `2022`), `AgreementNomenclatureCode` (el código arancelario según ese acuerdo/nomenclatura específico) |
+
+Todo lo demás del documento (Exporter, Producer, FormDJO con sus variantes y los 4 grupos de `Components`, EH, ApprovalEH) es **idéntico** entre v1.0.0 y v2.0.0.
+
+**Importante — esta es la primera vez que `DJOVer` determina la ESTRUCTURA del documento, no solo la whitelist**: `DJOViewer.jsx` y `pdf-generator.js` ramifican explícitamente por `DJOVer === '2.0.0'` para decidir si renderizan "Acuerdo comercial" (una sección) o "Acuerdos comerciales" (una por cada `<Agreement>`, con la cantidad declarada mostrada primero). Esto **no contradice** la sección 4 (el *valor* del acuerdo sigue sin determinar ningún requerimiento de campo) — son dos ejes distintos: *qué acuerdo es* sigue siendo puramente informativo; *qué versión de DJO es* ahora sí determina la forma de esa sección. Cualquier versión futura que agregue una diferencia estructural similar debe seguir este mismo patrón (branch explícito por `DJOVer`, con un valor por defecto — la forma de v1.0.0 — para cualquier versión no reconocida).
+
+**Versiones futuras**: cuando aparezca una nueva versión, agregar su entrada a `ALLOWED_ELEMENTS_BY_VERSION` y a `KNOWN_DJO_VERSIONS`, y evaluar si además hace falta una rama de renderizado nueva (como la de arriba) o si sus campos encajan en la forma ya existente.
 
 ## 4. El Acuerdo comercial es meramente informativo
 
@@ -208,7 +222,7 @@ Generado con `jsPDF` puro (sin `jspdf-autotable`: COD-Viewer lo tiene instalado 
 | Nombre de archivo | `DJO_<ApprovalNumber>_<fecha>.pdf` (usa `<ApprovalNumber>` — "Número DJO" en la vista web — como identificador; si no está presente, `DJO_DJO_<fecha>.pdf`) |
 | Versión de la app visible | Pie de página de cada hoja, discreta, igual que en la vista web |
 
-**Estructura**: calca el orden y los campos de `DJOViewer.jsx` sección por sección (información general, acuerdo, exportador, productor, producto y sus variantes, proceso de fabricación, los 4 grupos de materiales, declaración, EH, verificación) — no hay una tabla de datos separada que mantener sincronizada con la vista web.
+**Estructura**: calca el orden y los campos de `DJOViewer.jsx` sección por sección (información general, acuerdo(s), exportador, productor, producto y sus variantes, proceso de fabricación, los 4 grupos de materiales, declaración, EH, verificación) — no hay una tabla de datos separada que mantener sincronizada con la vista web. La sección de acuerdo(s) rama igual que la vista web según `DJOVer` (ver sección 3) — `renderAgreement()` en `pdf-generator.js` dibuja un bloque por cada `<Agreement>` en v2.0.0, precedido por el campo "Cantidad de acuerdos" (`AgreementQty`); en v1.0.0 sigue siendo una única sección "Acuerdo comercial".
 
 **Resaltado de campos — diferencia deliberada con COD-Viewer**: cada campo se pinta ámbar (obligatorio) o gris (opcional), igual que los íconos de `<Field>` en la vista web. **A diferencia de COD-Viewer, el PDF de DJO no resalta en rojo un campo obligatorio que esté vacío** — es la misma decisión que ya regía para el componente `<Field>` de la vista web (sección 12), aplicada acá para que el PDF y la pantalla muestren siempre la misma información con la misma severidad visual; un campo vacío se ve simplemente como "No especificado" dentro de su caja ámbar u gris.
 
@@ -224,5 +238,4 @@ Generado con `jsPDF` puro (sin `jspdf-autotable`: COD-Viewer lo tiene instalado 
 ## 12. Deuda conocida / pendiente explícito
 
 - **`Field` sin resaltado de error** (`hasError`) para un campo obligatorio faltante, tanto en la vista web como en el PDF (sección 10) — dejado tal cual a pedido explícito del dueño del proyecto (2026-09-04).
-- **Versión 2.0.0**: agregará campos nuevos, todavía sin especificar (sección 3).
 - **No aplican a DJO, no son deuda**: la tabla M/O/NC por acuerdo y la validación contra un XSD oficial externo — ninguna de las dos tiene sentido para DJO dado que no hay acuerdo-dependencia (sección 4) ni regulador externo (sección 1). Si en el futuro se quiere una validación de esquema, sería contra un XSD propio de Sauken, no una adaptación del de ALADI.

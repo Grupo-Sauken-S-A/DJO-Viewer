@@ -209,6 +209,7 @@ describe.runIf(hasRealFixtures())('getEmissionStage contra DJO reales', () => {
     'djo-exportador-signed-eh-signed.xml': 4,
     'djo-ejemplo-1-sin-firmas.xml': 'anomalo',
     'djo-ejemplo-2-sin-firmas.xml': 'anomalo',
+    'djo-ejemplo-v200.xml': 'anomalo', // DJOVer 2.0.0, mismo caso: EH/ApprovalEH sin firmas
   };
 
   for (const name of availableRealFixtures()) {
