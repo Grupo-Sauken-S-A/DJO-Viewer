@@ -5,6 +5,12 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.4.3] - 2026-09-04
+
+### Revertido
+
+- Se saca el campo explícito "Cantidad de..." agregado en v1.4.1 (y el que ya existía para `AgreementQty` desde v1.4.0) en las 6 secciones repetibles (Acuerdos comerciales, Presentaciones del producto, Materiales locales/intrazona/extrazona/de terceros países PAC), tanto en la vista web como en el PDF. El usuario lo vio en producción y señaló que era un campo redundante — con el badge de conteo del título de sección alcanza, no hace falta un campo aparte. Al revisar el código se confirmó que, para 5 de las 6 secciones, el badge del título ya leía el mismo valor declarado que mostraba el campo (pura duplicación); solo en `Agreement` el badge es un conteo real distinto del valor declarado, pero el usuario decidió que tampoco hace falta mostrar ambos ahí. Ver `docs/BUSINESS_RULES.md` §9 para el detalle de por qué el badge no usa el mismo criterio en las 6 secciones.
+
 ## [1.4.2] - 2026-09-04
 
 ### Corregido

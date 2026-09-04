@@ -1,6 +1,6 @@
 {
   "name": "djo-viewer",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Visualizador web de Declaraciones Juradas de Origen (DJO) Digital para Certificados de Origen / Sauken.",
   "private": true,
   "license": "GPL-2.0",

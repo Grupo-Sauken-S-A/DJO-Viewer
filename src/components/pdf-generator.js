@@ -318,17 +318,11 @@ class PDFGenerator {
 
   // Sección de lista con encabezado por ítem (variantes de producto, materiales locales/
   // intrazona/extrazona/PAC) — mismo patrón que addListSection de COD-Viewer para facturas
-  // y mercaderías. declaredQty (opcional) muestra el valor de la etiqueta *Qty tal como lo
-  // declara el XML, además del conteo real en el título de sección — permite detectar a
-  // simple vista un desfasaje entre lo declarado y lo que realmente hay (mismo criterio que
-  // "Cantidad de acuerdos" en la sección de Acuerdos comerciales).
-  addListSection(title, items, itemRenderer, level = 3, declaredQty = null) {
+  // y mercaderías.
+  addListSection(title, items, itemRenderer, level = 3) {
     if (items.length === 0) return;
 
     this.addSection(title, level, items.length);
-    if (declaredQty) {
-      this.addField(declaredQty.label, declaredQty.value, { required: true, indent: 15 });
-    }
 
     items.forEach((item, index) => {
       this.checkPageBreak(30);
@@ -644,7 +638,6 @@ class PDFGenerator {
       if (this.hasMultipleAgreements) {
         const agreements = Array.from(djo?.querySelectorAll('Agreement') || []);
         this.addSection('Acuerdos comerciales', 3, agreements.length);
-        this.addField('Cantidad de acuerdos', djo?.querySelector('AgreementQty')?.textContent, { required: true, indent: 15 });
         agreements.forEach((agreementEl) => this.renderAgreement(agreementEl));
       } else {
         this.addSection('Acuerdo comercial', 3);
@@ -689,7 +682,7 @@ class PDFGenerator {
 
       this.addListSection('Presentaciones del producto', getGoodVariants(formDJO), (variant) => {
         this.renderGoodVariant(variant);
-      }, 3, { label: 'Cantidad de presentaciones', value: formDJO?.querySelector('GoodVariantQty')?.textContent });
+      });
 
       this.addSection('Proceso de fabricación', 3);
       this.addField('Descripción', formDJO?.querySelector('ManufacturingProcess > DescriptionOfManufacturingProcess')?.textContent, { required: true, indent: 15 });
@@ -698,33 +691,25 @@ class PDFGenerator {
       this.addListSection(
         'Materiales locales',
         Array.from(formDJO?.querySelectorAll('Components > LocalSupplies > LocalSuppliesItem') || []),
-        (item) => this.renderLocalSupply(item),
-        3,
-        { label: 'Cantidad de materiales locales', value: formDJO?.querySelector('Components > LocalSupplies > LocalSuppliesQty')?.textContent }
+        (item) => this.renderLocalSupply(item)
       );
 
       this.addListSection(
         'Materiales intrazona',
         Array.from(formDJO?.querySelectorAll('Components > IntrazoneSupplies > IntrazoneSuppliesItem') || []),
-        (item) => this.renderIntrazoneSupply(item),
-        3,
-        { label: 'Cantidad de materiales intrazona', value: formDJO?.querySelector('Components > IntrazoneSupplies > IntrazoneSuppliesQty')?.textContent }
+        (item) => this.renderIntrazoneSupply(item)
       );
 
       this.addListSection(
         'Materiales extrazona',
         Array.from(formDJO?.querySelectorAll('Components > ExtrazoneSupplies > ExtrazoneSuppliesItem') || []),
-        (item) => this.renderExtrazoneSupply(item),
-        3,
-        { label: 'Cantidad de materiales extrazona', value: formDJO?.querySelector('Components > ExtrazoneSupplies > ExtrazoneSuppliesQty')?.textContent }
+        (item) => this.renderExtrazoneSupply(item)
       );
 
       this.addListSection(
         'Materiales de terceros países PAC',
         Array.from(formDJO?.querySelectorAll('Components > PACThirdCountrySupplies > PACThirdCountrySuppliesItem') || []),
-        (item) => this.renderPACSupply(item),
-        3,
-        { label: 'Cantidad de materiales de terceros países PAC', value: formDJO?.querySelector('Components > PACThirdCountrySupplies > PACThirdCountrySuppliesQty')?.textContent }
+        (item) => this.renderPACSupply(item)
       );
 
       this.addSection('Declaración Jurada de Origen', 3);
