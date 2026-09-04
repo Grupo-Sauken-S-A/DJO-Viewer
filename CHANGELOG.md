@@ -5,6 +5,12 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.4.2] - 2026-09-04
+
+### Corregido
+
+- Documentación desactualizada tras agregar el fixture `djo-ejemplo-v200.xml` (v1.4.0): `README.md` y `docs/DEVELOPER_GUIDE.md` seguían diciendo "6 DJO reales" en vez de 7; el párrafo de fuentes de `docs/BUSINESS_RULES.md` tampoco reflejaba las 7. `AGENTS.md` no tenía todavía la entrada de "Ya implementado" para el cambio de v1.4.1 (cantidad declarada en las 6 secciones repetibles).
+
 ## [1.4.1] - 2026-09-04
 
 ### Agregado

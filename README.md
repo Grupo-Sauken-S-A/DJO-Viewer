@@ -46,9 +46,9 @@ npm run test:watch
 
 ## Tests
 
-El suite (`npm test`) cubre `src/lib/input-validation.js`, `src/lib/djo-spec.js`, `src/components/signature-utils.js` y `POST /api/verify-signature-integrity` con casos sintéticos, más `test/pipeline.test.js` (replica `DJOViewer.processXML()` de punta a punta) y `src/components/pdf-generator.test.js` (test de humo: genera el PDF completo contra las 6 DJO reales y variantes mutadas, sin validar contenido visual/posicional).
+El suite (`npm test`) cubre `src/lib/input-validation.js`, `src/lib/djo-spec.js`, `src/components/signature-utils.js` y `POST /api/verify-signature-integrity` con casos sintéticos, más `test/pipeline.test.js` (replica `DJOViewer.processXML()` de punta a punta) y `src/components/pdf-generator.test.js` (test de humo: genera el PDF completo contra las 7 DJO reales y variantes mutadas, sin validar contenido visual/posicional).
 
-Una parte de los tests usa DJO reales de referencia como fixtures (para probar contra la estructura real y las 4 etapas del proceso de emisión). Esos XML **no están en el repositorio** por contener datos de negocio reales — van en `test/fixtures/real/` (gitignorado) y los tests que los necesitan se saltan solos si el directorio no existe, así que `npm test` funciona igual en un clon nuevo del repo, solo que con menos cobertura.
+Una parte de los tests usa DJO reales de referencia como fixtures (para probar contra la estructura real, las 4 etapas del proceso de emisión, y ambas versiones — 1.0.0 y 2.0.0). Esos XML **no están en el repositorio** por contener datos de negocio reales — van en `test/fixtures/real/` (gitignorado) y los tests que los necesitan se saltan solos si el directorio no existe, así que `npm test` funciona igual en un clon nuevo del repo, solo que con menos cobertura.
 
 ## Estructura del proyecto
 

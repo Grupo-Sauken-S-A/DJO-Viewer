@@ -2,7 +2,7 @@
 
 Este documento es la referencia exhaustiva de **todas** las reglas de negocio, validaciones y decisiones de diseño de esta aplicación: de dónde salen, por qué son así, y dónde están implementadas. Está pensado tanto para desarrolladores humanos como para asistentes de IA que trabajen sobre este código — léelo antes de tocar cualquier lógica relacionada con versiones, campos, firmas o validación de XML.
 
-Fuentes usadas para armar este documento: confirmación directa de Juan Carlos Rios (dueño del proyecto, Grupo Sauken S.A., 2026-09-04) y 6 DJO de ejemplo (`test/fixtures/real/`, gitignoradas) que cubren las 4 etapas reales del proceso de emisión.
+Fuentes usadas para armar este documento: confirmación directa de Juan Carlos Rios (dueño del proyecto, Grupo Sauken S.A., 2026-09-04) y 7 DJO de ejemplo (`test/fixtures/real/`, gitignoradas) que cubren las 4 etapas reales del proceso de emisión y ambas versiones de `DJOVer` (1.0.0 y 2.0.0).
 
 ## Índice
 

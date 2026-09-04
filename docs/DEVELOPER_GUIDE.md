@@ -65,7 +65,7 @@ src/
                                  # en pantalla sin confundirla con DJOVer
 test/
   pipeline.test.js               # test de integración: replica DJOViewer.processXML() de
-                                  # punta a punta contra entradas inválidas y las 6 DJO reales
+                                  # punta a punta contra entradas inválidas y las 7 DJO reales
   fixtures/real/                # DJO reales de referencia (gitignorado, no se publica)
   helpers/fixtures.js           # utilidades para cargar/mutar esos fixtures en los tests
 ```
