@@ -5,6 +5,14 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.4.4] - 2026-09-04
+
+### Seguridad
+
+- `npm audit fix`: resueltas las 11 vulnerabilidades reportadas (8 altas, 1 moderada, 2 bajas) en dependencias transitivas — `next` 16.0.10→16.3.4 (dentro del rango `^16.0.8` ya declarado, sin cambio de major), `sharp`, `postcss`, `minimatch`, `brace-expansion`, `picomatch`, `yaml`, `browserslist`, `postcss-selector-parser` a sus versiones parcheadas. Ninguna dependencia directa cambió de rango en `package.json` — solo se actualizó `package-lock.json`. `npm audit` queda en 0 vulnerabilidades.
+- `npm update`: actualizadas dentro de sus rangos existentes las dependencias directas que tenían una versión más nueva disponible sin cambiar de major (`@babel/core`, `@babel/preset-env`, `@babel/preset-react`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-slot`, `@tailwindcss/forms`, `@types/node`, `@types/react`, `@types/react-dom`, `autoprefixer`, `eslint`, `tailwind-merge`, `tailwindcss`). Quedan pendientes, a propósito, los saltos de major (React 19, Tailwind 4, ESLint 10, Vitest 5, lucide-react 1.x) — no traen vulnerabilidades de seguridad, son cambios de breaking-change potencial que ameritan su propia revisión, no un bump automático.
+- Verificado: 115 tests, lint y build sin errores; app cargada en el navegador sin errores de consola.
+
 ## [1.4.3] - 2026-09-04
 
 ### Revertido
