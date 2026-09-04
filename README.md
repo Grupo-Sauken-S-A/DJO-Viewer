@@ -1,29 +1,29 @@
 # DJO Viewer
 
-Visualizador web de Declaraciones Juradas de Origen (DJO) Digital, desarrollado por [Sauken](https://sauken.com.ar/) para [Certificados de Origen](https://certificadoorigen.com.ar/).
+Visualizador de Declaraciones Juradas de Origen (DJO) Digital — un formato definido por Grupo Sauken S.A. para su propio sistema de gestión de certificados de origen.
 
-Permite abrir un archivo XML de DJO de dos formas:
+Desarrollado por [Sauken](https://sauken.com.ar/) para [Certificados de Origen](https://certificadoorigen.com.ar/).
 
-1. **Carga manual**: seleccionando un archivo `.xml` desde el navegador.
-2. **Por URL**: agregando el parámetro `xmlUri` a la URL de la aplicación, por ejemplo:
+## Qué hace
 
-   ```
-   https://tu-dominio/?xmlUri=https://donde-sea/certificado.xml
-   ```
+- Carga un XML de DJO desde el disco, o automáticamente vía el parámetro `?xmlUri=<url>` en la URL (por ejemplo `http://localhost:3001/?xmlUri=https://ejemplo.com/declaracion.xml`) — el XML se trae a través de `/api/proxy`, una ruta interna que evita problemas de CORS al pedirlo desde el navegador. Esto permite que cualquier sistema externo, de cualquier organización o red, arme un enlace directo a una DJO específica para visualizarla sin pasos manuales.
+- Valida el archivo de entrada: codificación UTF-8, BOM, versión de DJO reconocida, elementos fuera de los definidos para esa versión, estructura básica, `Content-Type` de la URL remota — avisa sin bloquear la vista, salvo el tamaño (máximo 4 MB), que sí bloquea el procesamiento.
+- Muestra **todos** los campos definidos para la versión de la DJO, tengan o no contenido — a diferencia de COD, en DJO no hay campos que se oculten según acuerdo comercial (el acuerdo es meramente informativo).
+- Verifica las firmas digitales (XMLDSig) de los elementos `DJO` y `DJOEH`: algoritmo, firmante, si el certificado estaba vigente en el momento real de esa firma (no en el momento de mirarlo), y la **integridad criptográfica real** (recalcula el digest y verifica `SignatureValue` — detecta si el documento fue editado después de firmarlo, vía [`/api/verify-signature-integrity`](src/app/api/verify-signature-integrity/route.js)). No valida revocación ni la cadena de confianza del certificado.
+- Detecta en qué etapa del proceso de emisión está la DJO (borrador, firmado por el Exportador, aprobado por la Entidad Habilitada, completo) y lo avisa si no está terminado, o si el orden de firmas es inconsistente.
 
-   Esto permite que cualquier sistema externo (de cualquier organización o red) arme un enlace directo a un DJO específico para que se visualice sin pasos manuales.
+## Más documentación
 
-## Stack
-
-- [Next.js](https://nextjs.org/) 16 (App Router)
-- React 18
-- Tailwind CSS
+- [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) — qué es una DJO, cómo se construye y firma, cómo la interpreta esta app. Punto de entrada conceptual para quien no conozca el dominio.
+- [`docs/BUSINESS_RULES.md`](docs/BUSINESS_RULES.md) — referencia exhaustiva de cada regla de negocio y validación, con su fuente y su porqué.
+- [`AGENTS.md`](AGENTS.md) — reglas de diseño que no hay que "corregir" por iniciativa propia (proxy abierto, sin CORS global, etc.), pensado para agentes de IA que trabajen en este repo.
+- [`SECURITY.md`](SECURITY.md) — qué decisiones de seguridad son intencionales (no reportar como vulnerabilidad) y cómo reportar un problema real.
 
 ## Requisitos
 
 - Node.js `>= 24.15.0` (lo exige `jsdom`, usado por la suite de tests)
 
-## Desarrollo local
+## Instalación y uso
 
 ```bash
 npm install
@@ -32,87 +32,45 @@ npm run dev
 
 La app queda disponible en `http://localhost:3001`.
 
-## Tests
+Otros scripts disponibles:
 
 ```bash
-npm test        # corre la suite una vez
+npm run build      # build de producción
+npm run start      # sirve el build de producción
+npm run lint       # eslint
+npm test           # corre la suite de tests (Vitest)
 npm run test:watch
 ```
 
-Suite con [Vitest](https://vitest.dev/) + jsdom: `src/lib/input-validation.js`, `src/lib/djo-spec.js`, `src/components/signature-utils.js` y `POST /api/verify-signature-integrity`, con casos sintéticos y contra DJO reales de referencia (`test/fixtures/real/`, gitignorado por contener datos de negocio reales — los tests que los necesitan se saltan solos si el directorio no existe).
+## Tests
 
-## Build de producción
+El suite (`npm test`) cubre `src/lib/input-validation.js`, `src/lib/djo-spec.js`, `src/components/signature-utils.js` y `POST /api/verify-signature-integrity`, con casos sintéticos.
 
-```bash
-npm run build
-npm run start
-```
-
-## Cómo funciona la carga por URL
-
-1. El navegador navega a `/?xmlUri=<url-del-xml>` (navegación normal de página, no requiere CORS).
-2. El componente cliente llama a `/api/proxy?url=<url-del-xml>`.
-3. Esa ruta corre en el servidor y hace `fetch()` del XML, evitando así restricciones de CORS del servidor de origen del archivo. Rechaza respuestas que no parezcan XML (`Content-Type` `html`/`json`/`image`/`video`/`audio`/`pdf`) y corta la lectura si el cuerpo supera 4 MB, pasando los bytes tal cual (sin decodificar) para preservar un eventual BOM.
-4. El XML se decodifica preservando la información de BOM, se parsea en el navegador con `DOMParser`, y se renderiza la estructura del documento.
-
-### Nota de diseño importante
-
-El endpoint `/api/proxy` (ver [src/app/api/proxy/route.js](src/app/api/proxy/route.js)) acepta **cualquier** URL en el parámetro `url`, sin allowlist de dominios. Esto es **intencional**: el objetivo del producto es que cualquier aplicación, en cualquier computadora o red, pueda enlazar un DJO propio para visualizarlo acá, sin que el visualizador dependa de una lista cerrada de proveedores.
-
-Quien despliegue o modifique este proyecto debe tener presente que esto habilita un patrón de proxy abierto (server-side request forgery, SSRF) por diseño. Antes de restringirlo (por ejemplo agregando una allowlist de hosts), confirmar que no rompe el caso de uso principal del producto. `next.config.js` **no** agrega headers CORS globales — se removieron porque no aportaban nada al caso de uso real (la carga por `?xmlUri=` ya funciona vía este proxy server-to-server, nunca sujeto a CORS) y solo ampliaban la superficie de abuso.
-
-## Versionado de la DJO y campos permitidos
-
-A diferencia de COD (regulado por ALADI), el formato DJO lo define exclusivamente **Grupo Sauken S.A.** para su propio sistema de gestión de certificados de origen — no hay una norma externa que consultar. La versión vigente es **1.0.0**. Una DJO puede omitir u dejar vacío cualquier campo de su versión, pero **nunca** puede traer un elemento no definido para esa versión. [src/lib/djo-spec.js](src/lib/djo-spec.js) mantiene la lista de elementos permitidos por versión (`ALLOWED_ELEMENTS_BY_VERSION`) y `getUnknownElements()` la valida contra el XML cargado. Cuando exista la versión 2.0.0 (con campos nuevos, todavía sin definir), hay que agregar su propia entrada a esa lista.
-
-El `<AgreementAcronym>` es **meramente informativo** en DJO: a diferencia de COD, ningún campo ni validación depende de qué acuerdo declare el documento.
-
-Todo campo definido para la versión se muestra siempre en pantalla, tenga o no contenido — la validación de contenido la hace un Funcionario Habilitado (FH) de forma visual, así que ocultar un campo vacío le ocultaría justamente lo que necesita revisar.
-
-## Validaciones sobre el XML de entrada
-
-Implementadas en [src/lib/input-validation.js](src/lib/input-validation.js), corridas desde `processXML()` en `DJOViewer.jsx`: codificación UTF-8 declarada en el prólogo, caracteres de reemplazo (indicio de mala decodificación), versión de DJO reconocida, elementos no definidos para la versión (ver arriba), presencia de `<DJOVer>`/`<AgreementAcronym>`, estructura mínima (`<DJO id="DJO">`/`<DJOEH id="DJOEH">`), BOM al inicio del archivo, y tamaño máximo de 4 MB (el único caso que **bloquea** en vez de solo advertir). Todas se muestran sin ocultar el resto del certificado.
-
-## Etapa de emisión
-
-La DJO se construye en 4 etapas (mismo mecanismo de dos firmas/dos actores que usa COD): 1) borrador sin firmar, 2) firmada por el Exportador (`#DJO`), 3) con datos de la Entidad Habilitada (`<EH>`/`<ApprovalEH>`) agregados pero sin firmar por el Funcionario Habilitado, 4) completa (`#DJOEH` también firmado). `getEmissionStage()` (`src/components/signature-utils.js`) detecta en cuál está el documento cargado y lo muestra con una alerta roja cuando no está completo (o si el orden de firmas es inconsistente — ej. datos de la EH presentes sin que el Exportador haya firmado), sin ocultar el resto del contenido ya cargado.
-
-## Firmas digitales
-
-Implementado en [src/components/signature-utils.js](src/components/signature-utils.js) + [POST /api/verify-signature-integrity](src/app/api/verify-signature-integrity/route.js):
-
-- Presencia de `<ds:Signature>` para `#DJO` (Exportador) y `#DJOEH` (Entidad Habilitada), y detección de firmas duplicadas.
-- Algoritmo real de firma (no solo de digest) — marca RSA-SHA1/MD5 como débil/obsoleto.
-- Vigencia del certificado X.509 (parser ASN.1/DER propio), comparada contra la fecha real de cada firma (`DeclarationDate` para el Exportador, `ApprovalDate` para la Entidad Habilitada) — **nunca** contra la fecha de hoy.
-- **Integridad criptográfica real** (vía `xml-crypto`, server-side): recalcula el digest del contenido firmado y verifica `SignatureValue` contra el certificado embebido — detecta si el documento fue editado después de firmado.
-
-**No verifica** (y lo dice explícitamente en el texto que muestra): la cadena de confianza del certificado ni si estaba revocado (OCSP/CRL). Para esa validación sugiere usar otra herramienta (ej. S-FiDE).
+Una parte de los tests usa DJO reales de referencia como fixtures (para probar contra la estructura real y las 4 etapas del proceso de emisión). Esos XML **no están en el repositorio** por contener datos de negocio reales — van en `test/fixtures/real/` (gitignorado) y los tests que los necesitan se saltan solos si el directorio no existe, así que `npm test` funciona igual en un clon nuevo del repo, solo que con menos cobertura.
 
 ## Estructura del proyecto
 
 ```
 src/
   app/
-    api/proxy/route.js                       Proxy server-side para cargar XML por URL
-    api/verify-signature-integrity/route.js  Verificación XMLDSig real (digest + SignatureValue vía xml-crypto)
-    layout.js            Layout raíz
-    page.js              Página principal
-    globals.css
+    api/proxy/route.js                       # proxy server-side para cargar XML por URL (?xmlUri=)
+    api/verify-signature-integrity/route.js  # verificación criptográfica real (digest + SignatureValue vía xml-crypto)
+    layout.js, page.js                        # layout y entrada de Next.js (App Router)
   components/
-    DJOViewer.jsx             Componente principal: carga, valida y renderiza la DJO
-    signature-components.js  UI: campos, alertas de validación y de firmas
-    signature-utils.js       Firmas digitales (sin UI)
-    country-codes.js         Catálogo de países
-    ui/                       Componentes de UI reutilizables (Card, Alert, Tabs)
+    DJOViewer.jsx             # componente principal: carga, valida, parsea y renderiza la DJO
+    signature-components.js  # UI: campos y alertas (entrada, etapa de emisión, firmas)
+    signature-utils.js       # firmas digitales (presencia/vigencia/integridad) + etapa de emisión
+    country-codes.js         # mapeo de códigos de país a nombre
+    ui/                        # componentes de UI reutilizables (Card, Alert, Tabs)
   lib/
-    input-validation.js  Validaciones de codificación/estructura/tamaño/BOM del XML
-    djo-spec.js          Lista de elementos permitidos por versión de DJO
-    app-version.js       Versión de la app (de package.json), para mostrarla en pantalla
+    djo-spec.js                # elementos permitidos por versión de DJO
+    input-validation.js        # validaciones de codificación, tamaño, BOM y estructura del XML de entrada
+    app-version.js             # versión de la app (package.json), para mostrarla sin confundirla con DJOVer
 test/
-  fixtures/real/    DJO reales de referencia para tests (gitignorado)
-  helpers/fixtures.js  Utilidades para cargar/mutar esos fixtures en los tests
+  fixtures/real/    DJO reales usadas como fixtures (gitignorado, no se publica)
+  helpers/fixtures.js  Utilidades para cargar DJO reales y armar copias mutadas
 ```
 
 ## Licencia
 
-Este proyecto está licenciado bajo la [GNU General Public License v2.0](LICENSE).
+Este proyecto está licenciado bajo la GNU General Public License v2.0 — ver [LICENSE](LICENSE).

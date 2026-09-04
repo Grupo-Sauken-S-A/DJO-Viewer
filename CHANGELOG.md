@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.2.1] - 2026-09-04
+
+### Docs
+
+- Se agregan `docs/BUSINESS_RULES.md` (referencia exhaustiva de reglas de negocio y validaciones, con su fuente y su porqué) y `docs/DEVELOPER_GUIDE.md` (guía narrativa de onboarding), mismo patrón que ya usa el proyecto hermano COD-Viewer — pensados también para que agentes de IA los lean antes de tocar lógica de versiones, validación de entrada, firmas o etapa de emisión.
+- Se agrega `SECURITY.md`: documenta el proxy abierto y la falta de validación de cadena de confianza/revocación como decisiones de diseño intencionales (no reportar como vulnerabilidad), y cómo reportar un problema real.
+- Se recorta `README.md` (movía contenido detallado de reglas de negocio al nuevo `docs/`, README queda enfocado en instalación/uso/estructura, siguiendo el mismo formato que el README de COD-Viewer).
+- Se corrigen referencias cruzadas en `AGENTS.md` a la nueva documentación.
+
 ## [1.2.0] - 2026-09-04
 
 Reglas de negocio de DJO confirmadas directamente por el dueño del proyecto (no hay regulador externo como ALADI para COD — Grupo Sauken S.A. define el formato DJO para su propio sistema). Con esa base, se completan dos de los puntos que habían quedado pendientes en v1.1.0.
