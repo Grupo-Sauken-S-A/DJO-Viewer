@@ -5,6 +5,12 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.3.1] - 2026-09-04
+
+### Corregido
+
+- `docs/DEPLOYMENT.md`: el ejemplo de "probar en un puerto libre antes de cortar producción" usaba `PORT=3099 npm start`, pero el script `"start"` de DJO-Viewer tiene el puerto fijo en `-p 3001` — esa variable de entorno no lo pisa. Corregido a `npx next start -p 3099`.
+
 ## [1.3.0] - 2026-09-04
 
 ### Agregado

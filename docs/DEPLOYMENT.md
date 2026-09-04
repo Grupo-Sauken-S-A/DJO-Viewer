@@ -57,10 +57,11 @@ npm run build
 
 **No usar `npm ci --omit=dev`**: `autoprefixer`/`postcss`/`tailwindcss` son `devDependencies` pero **sí hacen falta durante `next build`** (procesan `globals.css`) — con `--omit=dev` el build falla con `Cannot find module 'autoprefixer'`. `jsdom`/`vitest`/`eslint` (las devDependencies reales de las que sí se podría prescindir en producción) no vale la pena separar del resto; instalar todo con un `npm ci` simple.
 
-Antes de cortar producción, probar en primer plano en un puerto libre:
+Antes de cortar producción, probar en primer plano en un puerto libre. El script `"start"` tiene el puerto fijo en `-p 3001` (`PORT=3099 npm start` **no** lo pisa) — invocar `next` directo con otro puerto:
 
 ```bash
-PORT=3099 npm start   # o el puerto que esté libre; confirmar con: ss -tlnp | grep :3099
+ss -tlnp | grep :3099   # confirmar que el puerto elegido está libre
+npx next start -p 3099
 # Ctrl+C para cortar la prueba una vez conforme
 ```
 
