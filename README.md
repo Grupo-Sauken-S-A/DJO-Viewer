@@ -21,7 +21,7 @@ Permite abrir un archivo XML de DJO de dos formas:
 
 ## Requisitos
 
-- Node.js `>= 20.9.0`
+- Node.js `>= 24.15.0` (lo exige `jsdom`, usado por la suite de tests)
 
 ## Desarrollo local
 

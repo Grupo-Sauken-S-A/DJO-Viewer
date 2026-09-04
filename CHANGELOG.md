@@ -5,6 +5,12 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.1.1] - 2026-09-04
+
+### Corregido
+
+- CI (`.github/workflows/ci.yml`) corría `npm test` con Node 20, pero `jsdom@30` (agregado en v1.1.0) exige `^22.22.2 || ^24.15.0 || >=26.0.0` — fallaba en GitHub Actions aunque pasaba en local (Node 24). Se sube el CI a Node 24 y se corrige `engines.node` en `package.json` (antes `>=20.9.0`, ya no alcanza) para reflejar el requisito real.
+
 ## [1.1.0] - 2026-09-04
 
 Pone al día a DJO-Viewer con mejoras que ya existían en el proyecto hermano COD-Viewer (ambos nacieron de la misma copia de producción, pero COD-Viewer evolucionó por separado). Quedan pendientes, a propósito: etapa de emisión, detección de elementos inesperados, resaltado de error en `Field`, whitelist de versiones/acuerdos reconocidos y la tabla M/O/NC data-driven (requieren fuente regulatoria de DJO — ver AGENTS.md).
