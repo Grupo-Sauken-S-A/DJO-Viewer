@@ -17,7 +17,7 @@ Si encontrás este comportamiento, **no hace falta reportarlo** — ya está doc
 
 ## Cómo reportar un problema de seguridad real
 
-Si encontrás un problema de seguridad que **no** sea uno de los puntos de diseño listados arriba (por ejemplo, una forma de ejecutar código arbitrario, exfiltrar datos que la app no debería exponer, o eludir la verificación de integridad de firma), reportalo de forma privada a Grupo Sauken S.A. en **info@sauken.com.ar**, en vez de abrir un issue público.
+Si encontrás un problema de seguridad que **no** sea uno de los puntos de diseño listados arriba (por ejemplo, una forma de ejecutar código arbitrario, exfiltrar datos que la app no debería exponer, o eludir la verificación de integridad de firma), reportalo de forma privada a Grupo Sauken S.A. en **soporte@sauken.com.ar**, en vez de abrir un issue público.
 
 ## Versiones soportadas
 

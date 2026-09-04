@@ -1,0 +1,5 @@
+# Este archivo no tiene efecto hasta que se active "Require review from Code Owners"
+# en la protección de la rama main (ver AGENTS.md, sección "Rama main protegida").
+# Se deja preparado para cuando el equipo crezca más allá de un solo mantenedor.
+
+* @jrios-sauken

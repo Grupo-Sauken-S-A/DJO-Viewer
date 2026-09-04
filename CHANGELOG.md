@@ -5,6 +5,18 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.2.2] - 2026-09-04
+
+### Agregado
+
+- `test/pipeline.test.js`: replica `DJOViewer.processXML()` de punta a punta (parseo, validaciones de entrada, etapa de emisión) con casos sintéticos de entradas inválidas y contra las 6 DJO reales de referencia (mismo patrón que ya tiene COD-Viewer).
+- `.github/CODEOWNERS`: preparado para cuando el equipo crezca — sin efecto hasta que se active "Require review from Code Owners" en la protección de la rama `main`.
+- `.gitattributes` (`* text=auto eol=lf`): normaliza los finales de línea a LF en el repositorio, evitando el warning de "LF será reemplazado por CRLF" en cada commit desde Windows.
+
+### Corregido
+
+- `SECURITY.md` apuntaba a `info@sauken.com.ar` como casilla de reporte de seguridad; se cambia a `soporte@sauken.com.ar`.
+
 ## [1.2.1] - 2026-09-04
 
 ### Docs
