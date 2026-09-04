@@ -3,8 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, XCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Field, Section, DocumentSignatures } from './signature-components';
+import { Field, Section, DocumentSignatures, InputValidationAlert } from './signature-components';
 import { getCountryName } from './country-codes';
+import { validateEncoding, validateStructure, validateSize, validateBOM, decodeXmlBytes } from '@/lib/input-validation';
+import { checkSignatureIntegrity } from './signature-utils';
+import { APP_NAME, APP_VERSION } from '@/lib/app-version';
 
 // Función auxiliar para obtener contenido de cualquiera de los dos tipos de etiquetas
 const getOperatorContent = (xmlData, fieldName) => {
@@ -21,9 +24,11 @@ const DJOViewer = () => {
   const [xmlData, setXmlData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [inputWarnings, setInputWarnings] = useState([]);
+  const [signatureIntegrity, setSignatureIntegrity] = useState({});
 
   // Función para procesar el XML
-  const processXML = (xmlContent) => {
+  const processXML = (xmlContent, { hasBOM = false } = {}) => {
     try {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
@@ -32,8 +37,22 @@ const DJOViewer = () => {
         throw new Error('El archivo XML no es válido');
       }
 
+      const bomWarning = validateBOM(hasBOM);
+      const warnings = [
+        ...validateEncoding(xmlContent),
+        ...validateStructure(xmlDoc),
+        ...(bomWarning ? [bomWarning] : [])
+      ];
+      setInputWarnings(warnings);
+
       setXmlData(xmlDoc);
       setError(null);
+
+      // Corre server-side (C14N no tiene equivalente en el navegador), se pide una sola vez
+      // por documento (no repetida por cada firma) — ver checkSignatureIntegrity en
+      // signature-utils.js.
+      setSignatureIntegrity({});
+      checkSignatureIntegrity(xmlContent).then(setSignatureIntegrity);
     } catch (err) {
       setError('Error al procesar el XML: ' + err.message);
       setXmlData(null);
@@ -52,8 +71,18 @@ const DJOViewer = () => {
         return;
       }
 
-      const text = await file.text();
-      processXML(text);
+      // Tamaño primero, sobre file.size directo — sin leer el contenido a memoria para
+      // archivos que ya sabemos que van a ser rechazados (validateSize bloquea, a
+      // diferencia del resto de las validaciones de entrada).
+      const sizeError = validateSize(file.size);
+      if (sizeError) {
+        setError(sizeError);
+        return;
+      }
+
+      const buffer = await file.arrayBuffer();
+      const { content, hasBOM } = decodeXmlBytes(buffer);
+      processXML(content, { hasBOM });
     } catch (err) {
       setError('Error al procesar el archivo: ' + err.message);
     }
@@ -70,13 +99,22 @@ const DJOViewer = () => {
                 setLoading(true);
                 const proxyUrl = `/api/proxy?url=${encodeURIComponent(xmlUri)}`;
                 const response = await fetch(proxyUrl);
-                
+
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const body = await response.json().catch(() => null);
+                    throw new Error(body?.error || `HTTP error! status: ${response.status}`);
                 }
-                
-                const xmlContent = await response.text();
-                processXML(xmlContent);
+
+                // El proxy ya aplica el tope de 4MB mientras lee la respuesta remota (ver
+                // /api/proxy), pero igual revalidamos acá — y usamos arrayBuffer en vez de
+                // .text() para poder detectar un BOM (ver decodeXmlBytes).
+                const buffer = await response.arrayBuffer();
+                const sizeError = validateSize(buffer.byteLength);
+                if (sizeError) {
+                    throw new Error(sizeError);
+                }
+                const { content, hasBOM } = decodeXmlBytes(buffer);
+                processXML(content, { hasBOM });
             }
         } catch (err) {
             setError('Error al cargar el XML desde URL: ' + err.message);
@@ -136,6 +174,9 @@ const DJOViewer = () => {
               Desarrollado por <a href="https://sauken.com.ar/" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">Sauken</a> para{' '}
               <a href="https://certificadoorigen.com.ar/" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">Certificados de Origen</a>
             </div>
+            <div className="mt-1 text-center text-[10px] text-gray-400">
+              {APP_NAME} v{APP_VERSION}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -166,8 +207,11 @@ const DJOViewer = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          {/* Advertencias sobre el archivo XML de entrada */}
+          <InputValidationAlert warnings={inputWarnings} />
+
           {/* Estado de Firmas Digitales */}
-          <DocumentSignatures xmlDoc={xmlData} />
+          <DocumentSignatures xmlDoc={xmlData} integrityResults={signatureIntegrity} />
 
           {/* Estructura del documento */}
           <Section title="Estructura de Declaración Jurada de Origen" level={0}>
@@ -721,6 +765,9 @@ const DJOViewer = () => {
           </Section>
         </Section>
 
+        <div className="text-center text-[10px] text-gray-400 pt-2">
+          {APP_NAME} v{APP_VERSION}
+        </div>
       </div>
       </CardContent>
     </Card>

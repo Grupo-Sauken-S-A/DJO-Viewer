@@ -32,6 +32,15 @@ npm run dev
 
 La app queda disponible en `http://localhost:3001`.
 
+## Tests
+
+```bash
+npm test        # corre la suite una vez
+npm run test:watch
+```
+
+Suite con [Vitest](https://vitest.dev/) + jsdom: `src/lib/input-validation.js`, `src/components/signature-utils.js` y `POST /api/verify-signature-integrity`, con casos sintéticos (sin fixtures de DJO reales todavía).
+
 ## Build de producción
 
 ```bash
@@ -43,34 +52,51 @@ npm run start
 
 1. El navegador navega a `/?xmlUri=<url-del-xml>` (navegación normal de página, no requiere CORS).
 2. El componente cliente llama a `/api/proxy?url=<url-del-xml>`.
-3. Esa ruta corre en el servidor y hace `fetch()` del XML, evitando así restricciones de CORS del servidor de origen del archivo, y lo devuelve al navegador como texto XML.
-4. El XML se parsea en el navegador con `DOMParser` y se renderiza la estructura del documento.
+3. Esa ruta corre en el servidor y hace `fetch()` del XML, evitando así restricciones de CORS del servidor de origen del archivo. Rechaza respuestas que no parezcan XML (`Content-Type` `html`/`json`/`image`/`video`/`audio`/`pdf`) y corta la lectura si el cuerpo supera 4 MB, pasando los bytes tal cual (sin decodificar) para preservar un eventual BOM.
+4. El XML se decodifica preservando la información de BOM, se parsea en el navegador con `DOMParser`, y se renderiza la estructura del documento.
 
 ### Nota de diseño importante
 
-El endpoint `/api/proxy` (ver [src/app/api/proxy/route.js](src/app/api/proxy/route.js)) acepta **cualquier** URL en el parámetro `url`, sin allowlist de dominios, y [next.config.js](next.config.js) agrega `Access-Control-Allow-Origin: *` a todas las rutas. Esto es **intencional**: el objetivo del producto es que cualquier aplicación, en cualquier computadora o red, pueda enlazar un DJO propio para visualizarlo acá, sin que el visualizador dependa de una lista cerrada de proveedores.
+El endpoint `/api/proxy` (ver [src/app/api/proxy/route.js](src/app/api/proxy/route.js)) acepta **cualquier** URL en el parámetro `url`, sin allowlist de dominios. Esto es **intencional**: el objetivo del producto es que cualquier aplicación, en cualquier computadora o red, pueda enlazar un DJO propio para visualizarlo acá, sin que el visualizador dependa de una lista cerrada de proveedores.
 
-Quien despliegue o modifique este proyecto debe tener presente que esto habilita un patrón de proxy abierto (server-side request forgery, SSRF) por diseño. Antes de restringirlo (por ejemplo agregando una allowlist de hosts), confirmar que no rompe el caso de uso principal del producto.
+Quien despliegue o modifique este proyecto debe tener presente que esto habilita un patrón de proxy abierto (server-side request forgery, SSRF) por diseño. Antes de restringirlo (por ejemplo agregando una allowlist de hosts), confirmar que no rompe el caso de uso principal del producto. `next.config.js` **no** agrega headers CORS globales — se removieron porque no aportaban nada al caso de uso real (la carga por `?xmlUri=` ya funciona vía este proxy server-to-server, nunca sujeto a CORS) y solo ampliaban la superficie de abuso.
+
+## Validaciones sobre el XML de entrada
+
+Implementadas en [src/lib/input-validation.js](src/lib/input-validation.js), corridas desde `processXML()` en `DJOViewer.jsx`: codificación UTF-8 declarada en el prólogo, caracteres de reemplazo (indicio de mala decodificación), presencia de `<DJOVer>`/`<AgreementAcronym>`, estructura mínima (`<DJO id="DJO">`/`<DJOEH id="DJOEH">`), BOM al inicio del archivo, y tamaño máximo de 4 MB (el único caso que **bloquea** en vez de solo advertir). Todas se muestran sin ocultar el resto del certificado.
+
+**Pendiente, a propósito**: a diferencia de COD-Viewer, esta validación no chequea si `<DJOVer>`/`<AgreementAcronym>` son valores "reconocidos" — para eso hace falta la tabla de versiones/acuerdos válidos de DJO (equivalente a `AGREEMENT_MAPPING` en cod-spec.js de COD-Viewer), que todavía no existe para esta app. Ver [AGENTS.md](AGENTS.md).
 
 ## Firmas digitales
 
-La app detecta la presencia de firmas digitales XMLDSig en el documento (ver [src/components/signature-utils.js](src/components/signature-utils.js)) pero **no valida** su validez criptográfica. Si se requiere validar una firma, debe usarse otra herramienta.
+Implementado en [src/components/signature-utils.js](src/components/signature-utils.js) + [POST /api/verify-signature-integrity](src/app/api/verify-signature-integrity/route.js):
+
+- Presencia de `<ds:Signature>` para `#DJO` (Exportador) y `#DJOEH` (Entidad Habilitada), y detección de firmas duplicadas.
+- Algoritmo real de firma (no solo de digest) — marca RSA-SHA1/MD5 como débil/obsoleto.
+- Vigencia del certificado X.509 (parser ASN.1/DER propio), comparada contra la fecha real de cada firma (`DeclarationDate` para el Exportador, `ApprovalDate` para la Entidad Habilitada) — **nunca** contra la fecha de hoy.
+- **Integridad criptográfica real** (vía `xml-crypto`, server-side): recalcula el digest del contenido firmado y verifica `SignatureValue` contra el certificado embebido — detecta si el documento fue editado después de firmado.
+
+**No verifica** (y lo dice explícitamente en el texto que muestra): la cadena de confianza del certificado ni si estaba revocado (OCSP/CRL). Para esa validación sugiere usar otra herramienta (ej. S-FiDE).
 
 ## Estructura del proyecto
 
 ```
 src/
   app/
-    api/proxy/route.js   Proxy server-side para cargar XML por URL
+    api/proxy/route.js                       Proxy server-side para cargar XML por URL
+    api/verify-signature-integrity/route.js  Verificación XMLDSig real (digest + SignatureValue vía xml-crypto)
     layout.js            Layout raíz
     page.js              Página principal
     globals.css
   components/
-    DJOViewer.jsx         Componente principal: carga y renderiza el DJO
-    signature-components.js  Verificación de presencia de firmas digitales
-    signature-utils.js       Utilidades XMLDSig
+    DJOViewer.jsx             Componente principal: carga, valida y renderiza la DJO
+    signature-components.js  UI: campos, alertas de validación y de firmas
+    signature-utils.js       Firmas digitales (sin UI)
     country-codes.js         Catálogo de países
     ui/                       Componentes de UI reutilizables (Card, Alert, Tabs)
+  lib/
+    input-validation.js  Validaciones de codificación/estructura/tamaño/BOM del XML
+    app-version.js       Versión de la app (de package.json), para mostrarla en pantalla
 ```
 
 ## Licencia

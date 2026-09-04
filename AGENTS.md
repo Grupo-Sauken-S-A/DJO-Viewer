@@ -8,9 +8,9 @@ Visualizador Next.js de Declaraciones Juradas de Origen (DJO) Digital, para Sauk
 
 ## Reglas importantes, no cambiar sin pedirlo explícitamente el usuario
 
-1. **`src/app/api/proxy/route.js` es un proxy abierto a propósito.** Acepta cualquier URL sin allowlist. Es el mecanismo que permite que cualquier app externa cargue un DJO propio vía `?xmlUri=`. No lo trates como un bug de seguridad a corregir por iniciativa propia (SSRF): ya fue señalado al usuario y decidió mantenerlo así.
-2. **`next.config.js` define `Access-Control-Allow-Origin: *`** en todas las rutas, también intencional, por el mismo motivo. No lo restrinjas sin pedirlo el usuario.
-3. **No se valida la firma digital XMLDSig**, solo se detecta su presencia (`src/components/signature-utils.js`). Si se pide agregar validación real, es un cambio de alcance grande (verificación criptográfica), no una corrección menor.
+1. **`src/app/api/proxy/route.js` es un proxy abierto a propósito.** Acepta cualquier URL sin allowlist de host (sí valida `Content-Type` y tamaño, ver README). Es el mecanismo que permite que cualquier app externa cargue un DJO propio vía `?xmlUri=`. No lo trates como un bug de seguridad a corregir por iniciativa propia (SSRF): ya fue señalado al usuario y decidió mantenerlo así.
+2. **`next.config.js` NO define headers CORS globales** (se removió `Access-Control-Allow-Origin: *`, ver CHANGELOG v1.1.0) — no reintroducirlo. No aportaba nada al caso de uso real (la carga por `?xmlUri=` ya funciona vía el proxy, server-to-server, nunca sujeto a CORS) y solo ampliaba la superficie de abuso tipo SSRF.
+3. **Sí se valida la firma digital XMLDSig** (presencia, algoritmo, vigencia del certificado contra la fecha real de la firma, firmas duplicadas, e integridad criptográfica real vía `xml-crypto`) — ver `src/components/signature-utils.js` + `POST /api/verify-signature-integrity`. Lo que deliberadamente **no** hace, y no se le debe pedir sin discutirlo primero: validar la cadena de confianza del certificado o consultar revocación (OCSP/CRL) — mismo criterio permanente que adoptó COD-Viewer (ver `docs` de ese proyecto hermano).
 
 ## Origen y plataforma
 
@@ -33,6 +33,18 @@ Se usa [versionado semántico](https://semver.org/lang/es/) estándar (`MAJOR.MI
 ## Rama `main` protegida
 
 `main` requiere pull request (no acepta push directo salvo administradores, ver abajo) y que pase el check de CI `build` (`.github/workflows/ci.yml`: `npm ci && npm run lint && npm run build`) antes de mergear. No permite force-push ni borrado de la rama. No exige aprobaciones de revisión (`required_approving_review_count: 0`) y `enforce_admins` está en `false`, para no bloquear al mantenedor solo. Si el equipo crece, subir `required_approving_review_count` a 1+ y evaluar `enforce_admins: true`.
+
+## Proyecto hermano: COD-Viewer
+
+DJO-Viewer nació como copia del proyecto `cod-viewer` (Certificados de Origen Digital, mismo mecanismo de 2 firmas/2 actores: Exportador firma `#DJO`/`#COD`, Entidad Habilitada agrega datos y firma `#DJOEH`/`#CODEH`). COD-Viewer evolucionó por separado y tiene features que DJO-Viewer todavía no — antes de "reinventar" algo de firmas/validación de entrada, revisar primero cómo lo resolvió COD-Viewer (`src/components/signature-utils.js`, `src/lib/input-validation.js` de ese repo) para no duplicar el trabajo de diseño.
+
+**Deliberadamente pendiente, no implementar sin pedirlo el usuario:**
+- **Etapa de emisión** (`getEmissionStage` en COD-Viewer: borrador/firmado EXP/certificado EH/completo) — excluido a propósito de la puesta al día de 2026-09-04.
+- **Detección de elementos inesperados** (`getUnexpectedElements` en COD-Viewer) — ídem, excluido a propósito.
+- **`Field` con prop `hasError`** (resaltado en rojo de obligatorio faltante) — se dejó tal cual estaba, sin ese resaltado, a pedido explícito del usuario.
+- **Whitelist de `DJOVer`/`AgreementAcronym` reconocidos** en `validateStructure()` — a diferencia de COD-Viewer, no se implementó: haría falta la fuente regulatoria de ALADI para DJO (equivalente a `ALADI_SEC_di2327_Rev13.pdf` que usa COD-Viewer) para no inventar una lista de valores válidos sin respaldo.
+- **Tabla de requerimientos M/O/NC data-driven** (equivalente a `cod-spec.js`/`xml-specifications.js` de COD-Viewer) — hoy `DJOViewer.jsx` tiene `required`/`optional` hardcodeado por campo, sin distinguir por versión/acuerdo. Igual que el punto anterior, requiere la fuente regulatoria de DJO antes de construirse.
+- **Validación contra XSD oficial de ALADI** — requiere los XSD oficiales de DJO por versión, que no están vendorizados en este repo.
 
 ## Licencia
 

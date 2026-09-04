@@ -4,6 +4,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { verifySignatureForElement, getSignatureStatusDisplay } from './signature-utils';
 import { getCountryName } from './country-codes';
 
+// Resalta en negrita el nombre de producto "S-FiDE" dentro de un texto plano, sin afectar el resto del formato
+const renderWithBoldSFiDE = (text) => {
+  const parts = text.split('S-FiDE');
+  if (parts.length === 1) return text;
+  return parts.flatMap((part, i) => (
+    i === 0 ? [part] : [<strong key={i}>S-FiDE</strong>, part]
+  ));
+};
+
 /**
  * Verifica si un string es una URL válida
  * @param {string} str - String a verificar
@@ -98,7 +107,7 @@ export const Field = ({ label, value, required, optional = false }) => (
   </div>
 );
 
-export const SignatureStatus = ({ xmlDoc, elementId, elementName }) => {
+export const SignatureStatus = ({ xmlDoc, elementId, elementName, integrityResult }) => {
   const [signatureStatus, setSignatureStatus] = useState(null);
 
   useEffect(() => {
@@ -123,25 +132,37 @@ export const SignatureStatus = ({ xmlDoc, elementId, elementName }) => {
     return null;
   }
 
-  const displayInfo = getSignatureStatusDisplay(signatureStatus);
+  // integrityResult llega por separado (se pide una sola vez para todo el documento, no por
+  // cada firma — ver checkSignatureIntegrity en signature-utils.js) y se mezcla acá.
+  const mergedStatus = {
+    ...signatureStatus,
+    integrityValid: integrityResult?.integrityValid ?? null
+  };
+  const displayInfo = getSignatureStatusDisplay(mergedStatus);
+  const boxClassBySeverity = {
+    ok: 'bg-blue-50 border-blue-200',
+    warning: 'bg-amber-50 border-amber-200',
+    error: 'bg-red-50 border-red-200'
+  };
+  const iconColorBySeverity = { warning: 'text-amber-500', error: 'text-red-500' };
 
   return (
-    <Alert 
-      className={`mt-2 ${!signatureStatus.hasSignature ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}
+    <Alert
+      className={`mt-2 ${boxClassBySeverity[displayInfo.severity]}`}
     >
       <div className="flex items-start gap-2">
-        {!signatureStatus.hasSignature ? (
-          <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+        {displayInfo.severity !== 'ok' ? (
+          <AlertTriangle className={`h-5 w-5 ${iconColorBySeverity[displayInfo.severity]} mt-0.5 flex-shrink-0`} />
         ) : (
-          <Info className="h-5 w-5 text-blue-500 mt-0.5" />
+          <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
         )}
-        <AlertDescription>
+        <AlertDescription className="flex-1 min-w-0">
           <div className="space-y-1">
             <code className="inline-block px-2 py-1 text-xs font-mono bg-white rounded">
               {elementName}
             </code>
             <div className={`text-sm whitespace-pre-line ${displayInfo.className}`}>
-              {displayInfo.text}
+              {renderWithBoldSFiDE(displayInfo.text)}
             </div>
           </div>
         </AlertDescription>
@@ -150,23 +171,51 @@ export const SignatureStatus = ({ xmlDoc, elementId, elementName }) => {
   );
 };
 
-export const DocumentSignatures = ({ xmlDoc }) => {
+export const InputValidationAlert = ({ warnings }) => {
+  if (!warnings || warnings.length === 0) {
+    return null;
+  }
+
+  return (
+    <Alert className="bg-amber-50 border-amber-200">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+        <AlertDescription className="flex-1 min-w-0">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-amber-800">
+              Advertencias sobre el archivo XML
+            </p>
+            <ul className="text-sm text-amber-700 list-disc list-inside space-y-0.5">
+              {warnings.map((warning, index) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
+          </div>
+        </AlertDescription>
+      </div>
+    </Alert>
+  );
+};
+
+export const DocumentSignatures = ({ xmlDoc, integrityResults = {} }) => {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900">
         Estado de Firmas Digitales
       </h3>
-      
+
       <SignatureStatus
         xmlDoc={xmlDoc}
         elementId="DJO"
         elementName="Declaración Jurada de Origen (DJO)"
+        integrityResult={integrityResults?.DJO}
       />
 
       <SignatureStatus
         xmlDoc={xmlDoc}
         elementId="DJOEH"
         elementName="Declaración Jurada de Origen con Entidad Habilitada (DJOEH)"
+        integrityResult={integrityResults?.DJOEH}
       />
     </div>
   );
