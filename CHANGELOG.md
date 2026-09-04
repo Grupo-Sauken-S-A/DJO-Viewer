@@ -5,6 +5,20 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.2.3] - 2026-09-04
+
+Auditoría de consistencia de toda la documentación tras la instalación en producción (ver `docs/DEPLOYMENT.md`, nuevo en esta versión).
+
+### Agregado
+
+- `docs/DEPLOYMENT.md`: topología real de producción (servidor `sknvm1`, puerto 3001, proxy TLS en `sknnuc`), el unit de systemd correcto (`Type=simple`) y por qué, y el procedimiento de instalación/actualización/rollback. Esta información existía solo de forma dispersa hasta ahora.
+
+### Corregido
+
+- `AGENTS.md` describía el CI como `npm ci && npm run lint && npm run build`, sin `npm test` (que sí corre desde que se agregó la suite de tests en v1.1.0) — corregido para reflejar el workflow real, y se agrega la versión de Node exigida.
+- `README.md` y `docs/DEVELOPER_GUIDE.md` no mencionaban `test/pipeline.test.js` (agregado en v1.2.2) en la sección de tests ni en el árbol de archivos — agregado en ambos.
+- Se agregan referencias cruzadas a `docs/DEPLOYMENT.md` desde `README.md`, `AGENTS.md` y `docs/DEVELOPER_GUIDE.md`.
+
 ## [1.2.2] - 2026-09-04
 
 ### Agregado

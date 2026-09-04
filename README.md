@@ -18,6 +18,7 @@ Desarrollado por [Sauken](https://sauken.com.ar/) para [Certificados de Origen](
 - [`docs/BUSINESS_RULES.md`](docs/BUSINESS_RULES.md) — referencia exhaustiva de cada regla de negocio y validación, con su fuente y su porqué.
 - [`AGENTS.md`](AGENTS.md) — reglas de diseño que no hay que "corregir" por iniciativa propia (proxy abierto, sin CORS global, etc.), pensado para agentes de IA que trabajen en este repo.
 - [`SECURITY.md`](SECURITY.md) — qué decisiones de seguridad son intencionales (no reportar como vulnerabilidad) y cómo reportar un problema real.
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — cómo corre en producción (servidor, systemd, puerto, proxy) y cómo instalar una versión nueva.
 
 ## Requisitos
 
@@ -44,7 +45,7 @@ npm run test:watch
 
 ## Tests
 
-El suite (`npm test`) cubre `src/lib/input-validation.js`, `src/lib/djo-spec.js`, `src/components/signature-utils.js` y `POST /api/verify-signature-integrity`, con casos sintéticos.
+El suite (`npm test`) cubre `src/lib/input-validation.js`, `src/lib/djo-spec.js`, `src/components/signature-utils.js` y `POST /api/verify-signature-integrity` con casos sintéticos, más `test/pipeline.test.js`, que replica `DJOViewer.processXML()` de punta a punta (parseo, validaciones, etapa de emisión).
 
 Una parte de los tests usa DJO reales de referencia como fixtures (para probar contra la estructura real y las 4 etapas del proceso de emisión). Esos XML **no están en el repositorio** por contener datos de negocio reales — van en `test/fixtures/real/` (gitignorado) y los tests que los necesitan se saltan solos si el directorio no existe, así que `npm test` funciona igual en un clon nuevo del repo, solo que con menos cobertura.
 
@@ -67,8 +68,9 @@ src/
     input-validation.js        # validaciones de codificación, tamaño, BOM y estructura del XML de entrada
     app-version.js             # versión de la app (package.json), para mostrarla sin confundirla con DJOVer
 test/
-  fixtures/real/    DJO reales usadas como fixtures (gitignorado, no se publica)
-  helpers/fixtures.js  Utilidades para cargar DJO reales y armar copias mutadas
+  pipeline.test.js     # test de integración: replica DJOViewer.processXML() de punta a punta
+  fixtures/real/       # DJO reales usadas como fixtures (gitignorado, no se publica)
+  helpers/fixtures.js  # utilidades para cargar DJO reales y armar copias mutadas
 ```
 
 ## Licencia

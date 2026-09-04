@@ -35,7 +35,11 @@ Se usa [versionado semántico](https://semver.org/lang/es/) estándar (`MAJOR.MI
 
 ## Rama `main` protegida
 
-`main` requiere pull request (no acepta push directo salvo administradores, ver abajo) y que pase el check de CI `build` (`.github/workflows/ci.yml`: `npm ci && npm run lint && npm run build`) antes de mergear. No permite force-push ni borrado de la rama. No exige aprobaciones de revisión (`required_approving_review_count: 0`) y `enforce_admins` está en `false`, para no bloquear al mantenedor solo. Si el equipo crece, subir `required_approving_review_count` a 1+ y evaluar `enforce_admins: true`.
+`main` requiere pull request (no acepta push directo salvo administradores, ver abajo) y que pase el check de CI `build` (`.github/workflows/ci.yml`: `npm ci && npm run lint && npm test && npm run build`, Node 24 — Node 20 no alcanza, `jsdom@30` exige `^22.22.2||^24.15.0||>=26`) antes de mergear. No permite force-push ni borrado de la rama. No exige aprobaciones de revisión (`required_approving_review_count: 0`) y `enforce_admins` está en `false`, para no bloquear al mantenedor solo. Si el equipo crece, subir `required_approving_review_count` a 1+ y evaluar `enforce_admins: true`.
+
+## Producción
+
+Corre en el servidor `sknvm1` (`/djo-viewer`, puerto 3001, systemd `viewdjo.service`), con el proxy público TLS en un servidor separado (`sknnuc`). Ver [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para la topología completa y cómo instalar una versión nueva — **no reinventar el mecanismo de systemd**: la unit actual (`Type=simple`, sin wrapper) corrige un bug real de procesos huérfanos que tenía el patrón viejo (`Type=forking` + script con un `npm run stop` que nunca existió).
 
 ## Proyecto hermano: COD-Viewer
 

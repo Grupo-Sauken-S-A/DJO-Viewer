@@ -60,6 +60,8 @@ src/
     app-version.js              # versión de la app (de package.json), para mostrarla
                                  # en pantalla sin confundirla con DJOVer
 test/
+  pipeline.test.js               # test de integración: replica DJOViewer.processXML() de
+                                  # punta a punta contra entradas inválidas y las 6 DJO reales
   fixtures/real/                # DJO reales de referencia (gitignorado, no se publica)
   helpers/fixtures.js           # utilidades para cargar/mutar esos fixtures en los tests
 ```
@@ -75,4 +77,5 @@ El XML real de una DJO tiene más anidamiento del que sugiere la interfaz (ver l
 - Para tocar qué elementos son válidos por versión: `src/lib/djo-spec.js`, y leer [`BUSINESS_RULES.md` §3`](BUSINESS_RULES.md#3-versiones-de-djo-y-elementos-permitidos) antes de cambiar nada.
 - Para tocar validaciones de entrada o de firmas: `src/lib/input-validation.js` / `src/components/signature-utils.js`, y [`BUSINESS_RULES.md` §6-8`](BUSINESS_RULES.md#6-validaciones-sobre-el-archivo-xml-de-entrada).
 - Para instalar, correr o entender la estructura de carpetas: [`README.md`](../README.md).
+- Para saber cómo corre en producción o instalar una versión nueva ahí: [`DEPLOYMENT.md`](DEPLOYMENT.md).
 - Antes de "reinventar" algo que suene a que ya debería existir: revisar primero el proyecto hermano `C:\cod-viewer` (mismo mecanismo de firmas) — puede que ya esté resuelto ahí y solo haga falta adaptarlo, aunque **no todo aplica igual** (ver `AGENTS.md`, sección "Proyecto hermano: COD-Viewer").
