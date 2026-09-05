@@ -8,6 +8,8 @@ Visualizador de Declaraciones Juradas de Origen (DJO) Digital — un formato def
 
 Desarrollado por [Sauken](https://sauken.com.ar/) para [Certificados de Origen](https://certificadoorigen.com.ar/).
 
+🌐 En producción: [viewdjo.certificadoorigen.com.ar](https://viewdjo.certificadoorigen.com.ar/)
+
 ## Qué hace
 
 - Carga un XML de DJO desde el disco, o automáticamente vía el parámetro `?xmlUri=<url>` en la URL (por ejemplo `http://localhost:3001/?xmlUri=https://ejemplo.com/declaracion.xml`) — el XML se trae a través de `/api/proxy`, una ruta interna que evita problemas de CORS al pedirlo desde el navegador. Esto permite que cualquier sistema externo, de cualquier organización o red, arme un enlace directo a una DJO específica para visualizarla sin pasos manuales.
