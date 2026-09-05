@@ -1,5 +1,9 @@
 # DJO Viewer
 
+[![CI](https://github.com/Grupo-Sauken-S-A/DJO-Viewer/actions/workflows/ci.yml/badge.svg)](https://github.com/Grupo-Sauken-S-A/DJO-Viewer/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Grupo-Sauken-S-A/DJO-Viewer)](https://github.com/Grupo-Sauken-S-A/DJO-Viewer/releases/latest)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
+
 Visualizador de Declaraciones Juradas de Origen (DJO) Digital — un formato definido por Grupo Sauken S.A. para su propio sistema de gestión de certificados de origen.
 
 Desarrollado por [Sauken](https://sauken.com.ar/) para [Certificados de Origen](https://certificadoorigen.com.ar/).
