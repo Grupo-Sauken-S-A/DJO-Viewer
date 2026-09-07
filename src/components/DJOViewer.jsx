@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Upload, XCircle, FileText } from 'lucide-react';
+import { Upload, XCircle, FileText, Download } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Field, Section, DocumentSignatures, InputValidationAlert, EmissionStageAlert } from './signature-components';
 import { generateDJOPDF } from './pdf-generator';
@@ -29,9 +29,12 @@ const DJOViewer = () => {
   const [signatureIntegrity, setSignatureIntegrity] = useState({});
   const [emissionStage, setEmissionStage] = useState(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [loadedFromUrl, setLoadedFromUrl] = useState(false);
+  const [xmlRawContent, setXmlRawContent] = useState(null);
+  const [downloadFileName, setDownloadFileName] = useState('declaracion.xml');
 
   // Función para procesar el XML
-  const processXML = (xmlContent, { hasBOM = false } = {}) => {
+  const processXML = (xmlContent, { hasBOM = false, source = 'file', fileName } = {}) => {
     try {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
@@ -51,6 +54,12 @@ const DJOViewer = () => {
 
       setXmlData(xmlDoc);
       setError(null);
+
+      // El botón "Descargar" sólo aplica cuando la fuente fue un URL (xmlUri), no una
+      // carga manual desde el disco del usuario (que ya tiene el archivo).
+      setLoadedFromUrl(source === 'url');
+      setXmlRawContent(xmlContent);
+      if (fileName) setDownloadFileName(fileName);
 
       // Corre server-side (C14N no tiene equivalente en el navegador), se pide una sola vez
       // por documento (no repetida por cada firma) — ver checkSignatureIntegrity en
@@ -109,6 +118,20 @@ const DJOViewer = () => {
     }
   };
 
+  const handleDownload = () => {
+    if (!xmlRawContent) return;
+
+    const blob = new Blob([xmlRawContent], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = downloadFileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Efecto para cargar XML desde URL si existe en los parámetros
   useEffect(() => {
     const loadXMLFromURL = async () => {
@@ -135,7 +158,20 @@ const DJOViewer = () => {
                     throw new Error(sizeError);
                 }
                 const { content, hasBOM } = decodeXmlBytes(buffer);
-                processXML(content, { hasBOM });
+
+                // Nombre de archivo sugerido para la descarga, tomado del último segmento
+                // de la URL de origen (con fallback si no es un .xml válido).
+                const urlFileName = (() => {
+                    try {
+                        const pathname = new URL(xmlUri).pathname;
+                        const base = pathname.substring(pathname.lastIndexOf('/') + 1);
+                        return base && base.toLowerCase().endsWith('.xml') ? base : 'declaracion.xml';
+                    } catch {
+                        return 'declaracion.xml';
+                    }
+                })();
+
+                processXML(content, { hasBOM, source: 'url', fileName: urlFileName });
             }
         } catch (err) {
             setError('Error al cargar el XML desde URL: ' + err.message);
@@ -251,6 +287,15 @@ const DJOViewer = () => {
               className="hidden"
             />
           </label>
+          {loadedFromUrl && (
+            <button
+              onClick={handleDownload}
+              className="btn-primary cursor-pointer text-center flex items-center justify-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Descargar
+            </button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
