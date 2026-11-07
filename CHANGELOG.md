@@ -5,6 +5,16 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.5.1] - 2026-11-06
+
+### Seguridad
+
+- Actualizadas vía Dependabot las dependencias con avisos de seguridad vigentes: `next` 16.3.4→16.4.4 (resuelve RCE en `next/og`, RCE en funciones `use cache`, y SSRF en optimización de imágenes — todas críticas/altas), `eslint-config-next` 16.3.4→16.4.4, `postcss` 8.5.28→8.5.32, `autoprefixer` 10.5.5→10.6.2, `xml-crypto` 6.1.2→6.4.0, `vitest` 4.1.11→4.1.12, `jsdom` 30.0.1→30.1.3, `@radix-ui/react-slot` 1.3.3→1.5.0, `@radix-ui/react-alert-dialog` 1.1.23→1.2.1.
+- `npm audit fix` (sin `--force`, sin tocar rangos en `package.json`): resueltas además `dompurify` (crítica, bypass de sanitización — dependencia opcional transitiva de `jspdf`, no usada en este proyecto ya que `pdf-generator.js` no llama a `jsPDF.html()`), `brace-expansion` (alta, DoS) y `zod` (alta, DoS).
+- Quitada la devDependency `@shadcn/ui`: no se referencia en ningún archivo de `src/`, era la única ruta de un aviso alto adicional.
+- Quedan 8 avisos moderados sin resolver, todos en la cadena `eslint-config-next` → `typescript-eslint` → `minimatch`: herramienta de lint en desarrollo, no alcanzable desde producción, pendiente de que el upstream publique una versión compatible sin salto de major.
+- Verificado: 115 tests, lint y build sin errores.
+
 ## [1.5.0] - 2026-09-07
 
 ### Agregado
